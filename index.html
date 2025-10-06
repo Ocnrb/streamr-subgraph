@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streamr Subgraph Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Dark Mode CSS Overrides */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a1a; /* Darker background */
+        }
+        .container-card {
+            /* Card background in dark gray */
+            background: #2d2d2d;
+            border-radius: 1.5rem;
+            /* Darker, more subtle shadow */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .scrollable-content {
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .btn-primary {
+            /* Retain Streamr blue accent */
+            background-color: #007bff;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .glow-blue {
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+        }
+        /* Custom styles for JSON output area (code view) */
+        #outputArea {
+            background-color: #000000; /* True black for code area */
+            color: #d4d4d4; /* Light text */
+            border-color: #4a4a4a;
+        }
+        .modal {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        .modal-content {
+            background-color: #2d2d2d;
+            border-radius: 1rem;
+        }
+        /* Ensure datetime-local input is styled consistently */
+        input[type="datetime-local"] {
+            color-scheme: dark;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen flex justify-center text-gray-100">
+
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-content p-6 w-11/12 md:w-1/2 max-w-lg">
+            <h3 class="text-2xl font-bold text-gray-200 mb-4 flex justify-between items-center">
+                Settings
+                <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white">&times;</button>
+            </h3>
+            
+            <div class="space-y-4">
+                <!-- Gateway Base URL -->
+                <div>
+                    <label for="modalGraphBaseUrl" class="block text-sm font-medium text-gray-400 mb-1">
+                        Gateway Base URL
+                    </label>
+                    <input type="url" id="modalGraphBaseUrl" value="https://gateway-arbitrum.network.thegraph.com/api/"
+                           class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150"
+                           placeholder="The Graph Gateway Base URL">
+                </div>
+
+                <!-- API Key Input -->
+                <div>
+                    <label for="modalApiKey" class="block text-sm font-medium text-gray-400 mb-1">
+                        The Graph API Key
+                    </label>
+                    <input type="text" id="modalApiKey" value="bb77dd994c8e90edcbd73661a326f068"
+                           class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150"
+                           placeholder="Enter your The Graph API Key">
+                </div>
+                
+                <!-- Subgraph ID Input -->
+                <div>
+                    <label for="modalSubgraphId" class="block text-sm font-medium text-gray-400 mb-1">
+                        Subgraph ID
+                    </label>
+                    <input type="text" id="modalSubgraphId" value="EGWFdhhiWypDuz22Uy7b3F69E9MEkyfU9iAQMttkH5Rj"
+                           class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150"
+                           placeholder="Enter the Subgraph ID">
+                </div>
+
+                <div class="pt-4 flex justify-end">
+                    <button onclick="saveSettingsAndClose()" class="btn-primary">
+                        Save and Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END MODAL -->
+
+    <div id="app" class="w-full max-w-4xl space-y-8">
+        <!-- HEADER SECTION -->
+        <header class="text-center flex justify-between items-center">
+            <div class="flex-grow text-center">
+                <h1 class="text-4xl font-extrabold text-gray-100 mb-2">
+                    Streamr Subgraph Explorer
+                </h1>
+                <p class="text-lg text-gray-400">
+                    Query Streamr network entities via GraphQL on the Arbitrum Gateway.
+                </p>
+            </div>
+            
+            <!-- SETTINGS BUTTON -->
+            <button onclick="openSettingsModal()" class="text-gray-400 hover:text-blue-400 transition duration-150 p-2 rounded-full flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+            </button>
+        </header>
+
+        <!-- QUERY CONFIGURATION CARD (CLEANED UP) -->
+        <div class="container-card p-6 md:p-8">
+            <h2 class="text-2xl font-bold text-gray-200 mb-6">Query Configuration</h2>
+
+            <div class="space-y-4">
+
+                <!-- HIDDEN API/SUBGRAPH INPUTS (USED BY JS) -->
+                <input type="hidden" id="graphBaseUrl" value="https://gateway-arbitrum.network.thegraph.com/api/">
+                <input type="hidden" id="apiKey" value="bb77dd994c8e90edcbd73661a326f068">
+                <input type="hidden" id="subgraphId" value="EGWFdhhiWypDuz22Uy7b3F69E9MEkyfU9iAQMttkH5Rj">
+
+
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-4"> <!-- Grid updated to 5 columns -->
+                    
+                    <!-- 4. Entity Selector -->
+                    <div class="sm:col-span-1">
+                        <label for="entityName" class="block text-sm font-medium text-gray-400 mb-1">
+                            Entity to Query
+                        </label>
+                        <select id="entityName" onchange="updateFilterInputs(); updateRawQueryPreview();"
+                                class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150">
+                            <option value="streams">Stream (Data Flow)</option>
+                            <option value="sponsorships">Sponsorship</option>
+                            <option value="operators">Operator</option>
+                            <option value="stakes">Stake (Sponsorship Stake)</option>
+                            <option value="delegations">Delegation (Operator Stake)</option>
+                            <option value="delegators">Delegator (Delegator Profile)</option>
+                            <option value="stakingEvents" selected>Staking Event</option>
+                            <option value="sponsoringEvents">Sponsoring Event</option>
+                            <option value="sponsorshipDailyBuckets">Sponsorship Daily Bucket (Daily Metrics)</option>
+                            <option value="operatorDailyBuckets">Operator Daily Bucket (Daily Metrics)</option>
+                            <option value="nodes">Node (Storage Node)</option>
+                        </select>
+                    </div>
+
+                    <!-- 5. Limit Input -->
+                    <div class="sm:col-span-1">
+                        <label for="queryLimit" class="block text-sm font-medium text-gray-400 mb-1">
+                            Results (Max 1000)
+                        </label>
+                        <input type="number" id="queryLimit" value="10" min="1" max="1000" oninput="updateRawQueryPreview()"
+                               class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150">
+                    </div>
+
+                    <!-- 9. Result Offset (Skip) -->
+                    <div class="sm:col-span-1">
+                        <label for="querySkip" class="block text-sm font-medium text-gray-400 mb-1">
+                            Result Offset (Skip)
+                        </label>
+                        <input type="number" id="querySkip" value="0" min="0" oninput="updateRawQueryPreview(); checkPaginationButtons();"
+                               class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150">
+                    </div>
+
+                    <!-- 7. Order By Field Selector -->
+                    <div class="sm:col-span-1">
+                        <label for="orderByField" class="block text-sm font-medium text-gray-400 mb-1">
+                            Order By Field
+                        </label>
+                        <select id="orderByField" onchange="updateRawQueryPreview();"
+                                class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150">
+                            <!-- Options populated by JS: updateFilterInputs() -->
+                        </select>
+                    </div>
+
+                    <!-- 8. Order Direction Selector -->
+                    <div class="sm:col-span-1">
+                        <label for="orderDirection" class="block text-sm font-medium text-gray-400 mb-1">
+                            Order Direction
+                        </label>
+                        <select id="orderDirection" onchange="updateRawQueryPreview();"
+                                class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150">
+                            <option value="desc" selected>Descending (DESC)</option>
+                            <option value="asc">Ascending (ASC)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Advanced Filters Container -->
+                <div id="advancedFiltersContainer" class="p-4 border border-gray-700 rounded-xl bg-gray-800 space-y-3">
+                    <h3 class="text-lg font-semibold text-gray-200 border-b border-gray-700 pb-2 mb-3">Advanced Filters (<span id="currentEntityFilter">Staking Event</span>)</h3>
+                    <div id="filterInputs">
+                        <!-- Filter inputs will be injected here via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Manual Query Field (Auto-populated) -->
+                <div id="rawQueryContainer">
+                    <label for="rawQueryInput" class="block text-sm font-medium text-gray-200 mb-1">
+                        GraphQL Query Preview/Edit (Manual Override)
+                    </label>
+                    <textarea id="rawQueryInput" rows="8" oninput="checkRawOverride()"
+                                 class="w-full p-3 border border-gray-600 rounded-xl bg-gray-900 text-white font-mono text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150"
+                                 placeholder="Paste your GraphQL query here or edit the preview."></textarea>
+                    <p id="manualOverrideHint" class="text-xs text-yellow-500 mt-1 hidden">Manual Query Active: Form filters are ignored.</p>
+                </div>
+                
+                <!-- 6. Execute Button and Pagination Controls (UPDATED) -->
+                <div class="pt-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    
+                    <!-- Pagination Buttons -->
+                    <div class="flex space-x-2 w-full sm:w-auto">
+                        <button id="prevPageButton" onclick="changePage(-1)" class="btn-primary flex-grow sm:flex-grow-0 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-800 disabled:text-gray-500" disabled>
+                            &larr; Previous
+                        </button>
+                        <button id="nextPageButton" onclick="changePage(1)" class="btn-primary flex-grow sm:flex-grow-0" disabled>
+                            Next &rarr;
+                        </button>
+                    </div>
+
+                    <!-- Execute Button -->
+                    <button id="executeButton" onclick="executeQuery()" class="btn-primary w-full sm:w-auto glow-blue">
+                        Execute
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- OUTPUT SECTION -->
+        <div class="container-card p-6 md:p-8">
+            <h2 class="text-2xl font-bold text-gray-200 mb-6 flex justify-between items-center">
+                Query Result
+                <button id="copyButton" class="text-sm text-blue-400 hover:text-blue-200 font-medium hidden" onclick="copyResults()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-1">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy JSON
+                </button>
+            </h2>
+
+            <!-- Loading/Error/Result Display -->
+            <div id="outputArea" class="border border-gray-700 rounded-xl p-4 text-sm scrollable-content min-h-24">
+                <p class="text-gray-400">Waiting for query execution...</p>
+            </div>
+            
+            <p id="errorAlert" class="text-red-400 font-medium mt-4 hidden"></p>
+        </div>
+
+    </div>
+
+    <script type="module">
+        // Imports basic Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // Global Canvas Environment Variables (mandatory)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'streamr-explorer-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth;
+        let isAuthReady = false;
+        let isManualOverride = false; 
+        
+        
+        // --- Sorting Fields Definition ---
+        const SORT_FIELDS = {
+            streams: [
+                { value: 'id', label: 'ID (Address/Path)' },
+                { value: 'idAsString', label: 'ID (Substring Searchable)' },
+                { value: 'createdAt', label: 'Created At (Timestamp)' },
+                { value: 'updatedAt', label: 'Updated At (Timestamp)' },
+            ],
+            sponsorships: [
+                { value: 'id', label: 'ID (Address)' },
+                { value: 'spotAPY', label: 'Spot APY' },
+                { value: 'remainingWei', label: 'Remaining Funds (Wei)' },
+                { value: 'totalPayoutWeiPerSec', label: 'Payout Per Second' },
+                { value: 'operatorCount', label: 'Operator Count' },
+            ],
+            operators: [
+                { value: 'id', label: 'ID (Address)' },
+                { value: 'valueWithoutEarnings', label: 'Total Value Staked' },
+                { value: 'delegatorCount', label: 'Delegator Count' },
+                { value: 'cumulativeEarningsWei', label: 'Cumulative Earnings' },
+                { value: 'operatorsCutFraction', label: 'Operator Cut Fraction' },
+            ],
+            stakes: [
+                { value: 'id', label: 'ID' },
+                { value: 'amountWei', label: 'Amount Staked (Wei)' },
+                { value: 'joinTimestamp', label: 'Join Date' },
+            ],
+            delegations: [
+                { value: 'id', label: 'ID' },
+                { value: '_valueDataWei', label: 'Value Delegated (Wei)' },
+                { value: 'latestDelegationTimestamp', label: 'Delegation Date' },
+            ],
+            delegators: [
+                { value: 'id', label: 'ID (Address)' },
+            ],
+            stakingEvents: [
+                { value: 'date', label: 'Event Date' },
+                { value: 'amount', label: 'Amount' },
+            ],
+            sponsoringEvents: [
+                { value: 'date', label: 'Event Date' },
+                { value: 'amount', label: 'Amount' },
+            ],
+            sponsorshipDailyBuckets: [
+                { value: 'date', label: 'Date' },
+                { value: 'spotAPY', label: 'Spot APY' },
+                { value: 'totalStakedWei', label: 'Total Staked Wei' },
+                { value: 'remainingWei', label: 'Remaining Wei' },
+            ],
+            operatorDailyBuckets: [
+                { value: 'date', label: 'Date' },
+                { value: 'profitsWei', label: 'Profits (Wei)' },
+                { value: 'lossesWei', label: 'Losses (Wei)' },
+                { value: 'totalDelegatedWei', label: 'Total Delegated (Wei)' },
+            ],
+            nodes: [ // NEW: Node Sorting Fields
+                { value: 'id', label: 'ID (Address)' },
+                { value: 'lastSeen', label: 'Last Seen Date' },
+                { value: 'createdAt', label: 'Creation Date' },
+            ],
+        };
+
+        // --- Default Sorting Configuration ---
+        const DEFAULT_SORT = {
+            streams: { field: 'createdAt', direction: 'desc' },
+            sponsorships: { field: 'spotAPY', direction: 'desc' },
+            operators: { field: 'valueWithoutEarnings', direction: 'desc' },
+            stakes: { field: 'amountWei', direction: 'desc' },
+            delegations: { field: '_valueDataWei', direction: 'desc' },
+            delegators: { field: 'id', direction: 'asc' },
+            stakingEvents: { field: 'date', direction: 'desc' },
+            sponsoringEvents: { field: 'date', direction: 'desc' },
+            sponsorshipDailyBuckets: { field: 'date', direction: 'desc' },
+            operatorDailyBuckets: { field: 'date', direction: 'desc' },
+            nodes: { field: 'lastSeen', direction: 'desc' }, // NEW: Default sort by last seen
+        };
+
+        // --- Pagination State ---
+        // Store current result set size to determine if 'Next Page' should be enabled
+        let lastResultCount = 0;
+        
+        /**
+         * Initializes Firebase and performs initial authentication.
+         */
+        async function initializeFirebase() {
+            try {
+                if (firebaseConfig) {
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Firebase: Authenticated with custom token.");
+                    } else {
+                        await signInAnonymously(auth);
+                        console.log("Firebase: Anonymous authentication performed.");
+                    }
+                }
+                isAuthReady = true;
+            } catch (error) {
+                console.error("Firebase: Error during initialization/authentication:", error);
+            }
+        }
+
+        /**
+         * Checks the state of API Key and Subgraph ID fields and enables/disables the execute button.
+         */
+        window.checkInputs = function() {
+            // Note: API/Subgraph inputs are now hidden, fetching their values from hidden fields/JS state
+            const apiKeyInput = document.getElementById('apiKey');
+            const subgraphIdInput = document.getElementById('subgraphId');
+            const executeButton = document.getElementById('executeButton');
+
+            const apiKeyFilled = apiKeyInput.value.trim() !== '';
+            const subgraphIdFilled = subgraphIdInput.value.trim() !== '';
+            
+            // Check if raw query input is non-empty if the override flag is true
+            const rawQueryInput = document.getElementById('rawQueryInput');
+            const isQueryContentPresent = rawQueryInput.value.trim() !== '';
+
+            executeButton.disabled = !(apiKeyFilled && subgraphIdFilled && isQueryContentPresent);
+            
+            // Also update pagination buttons status
+            checkPaginationButtons();
+        }
+
+        /**
+         * Checks the current skip offset and last result count to enable/disables pagination buttons.
+         */
+        window.checkPaginationButtons = function() {
+            const skip = parseInt(document.getElementById('querySkip').value) || 0;
+            const limit = parseInt(document.getElementById('queryLimit').value) || 10;
+            const prevBtn = document.getElementById('prevPageButton');
+            const nextBtn = document.getElementById('nextPageButton');
+            const isDelegator = document.getElementById('entityName').value === 'delegators';
+
+            // Disable all pagination controls if in Delegator mode (single ID lookup)
+            if (isDelegator) {
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                return;
+            }
+
+            // Enable Previous button if skip > 0
+            prevBtn.disabled = skip <= 0;
+
+            // Enable Next button if we received a full page of results (meaning there might be more)
+            // Note: Since max limit is 1000, if lastResultCount is less than limit, there are no more pages.
+            nextBtn.disabled = lastResultCount < limit || isManualOverride;
+        }
+
+        /**
+         * Changes the pagination offset and executes the query.
+         * @param {number} direction -1 for previous page, 1 for next page.
+         */
+        window.changePage = function(direction) {
+            const skipInput = document.getElementById('querySkip');
+            const limit = parseInt(document.getElementById('queryLimit').value) || 10;
+            let currentSkip = parseInt(skipInput.value) || 0;
+
+            const newSkip = Math.max(0, currentSkip + (direction * limit));
+            skipInput.value = newSkip;
+
+            updateRawQueryPreview();
+            executeQuery();
+        }
+
+        // --- Modal/Settings Functions ---
+
+        /**
+         * Opens the settings modal and loads current values.
+         */
+        window.openSettingsModal = function() {
+            document.getElementById('modalGraphBaseUrl').value = document.getElementById('graphBaseUrl').value;
+            document.getElementById('modalApiKey').value = document.getElementById('apiKey').value;
+            document.getElementById('modalSubgraphId').value = document.getElementById('subgraphId').value;
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        /**
+         * Closes the settings modal.
+         */
+        window.closeSettingsModal = function() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        /**
+         * Saves modal values back to hidden inputs and triggers UI updates.
+         */
+        window.saveSettingsAndClose = function() {
+            document.getElementById('graphBaseUrl').value = document.getElementById('modalGraphBaseUrl').value.trim();
+            document.getElementById('apiKey').value = document.getElementById('modalApiKey').value.trim();
+            document.getElementById('subgraphId').value = document.getElementById('modalSubgraphId').value.trim();
+            
+            closeSettingsModal();
+            updateRawQueryPreview(); // Regenerate query with new parameters
+            checkInputs(); // Re-validate execute button
+        }
+        
+        /**
+         * Checks if the user manually edited the raw query box.
+         * If the content differs from the auto-generated query, it activates the override flag.
+         */
+        window.checkRawOverride = function() {
+            const rawInput = document.getElementById('rawQueryInput');
+            const autoGeneratedQuery = getAutoGeneratedQuery();
+            const manualOverrideHint = document.getElementById('manualOverrideHint');
+
+            if (rawInput.value.trim() !== autoGeneratedQuery.trim()) {
+                isManualOverride = true;
+                manualOverrideHint.classList.remove('hidden');
+            } else {
+                isManualOverride = false;
+                manualOverrideHint.classList.add('hidden');
+            }
+            checkInputs();
+        }
+
+        // --- Utility Functions ---
+
+        /**
+         * Converts a datetime-local string (YYYY-MM-DDThh:mm) to a Unix timestamp (seconds).
+         * Returns null if the input is empty or invalid.
+         */
+        function dateToTimestamp(dateString) {
+            if (!dateString) return null;
+            try {
+                // Parse the local date string to a Date object, treating it as local time
+                const date = new Date(dateString);
+                // Return timestamp in seconds
+                return Math.floor(date.getTime() / 1000).toString();
+            } catch (e) {
+                console.error("Invalid date conversion:", e);
+                return null;
+            }
+        }
+        
+        /**
+         * Converts a human-readable DATA amount (as a string) to a BigInt string in Wei.
+         * Handles decimal values by multiplying by 10^18.
+         * Returns null if input is invalid.
+         */
+        function dataToWei(dataAmount) {
+            if (!dataAmount) return null;
+            try {
+                const DECIMAL_PLACES = 18;
+                const [integerPartStr, fractionalPartStr] = dataAmount.split('.').concat('');
+                
+                const integerPart = BigInt(integerPartStr || '0');
+                
+                let fractionalWei = BigInt(0);
+                if (fractionalPartStr) {
+                    const trimmedFractional = fractionalPartStr.slice(0, DECIMAL_PLACES);
+                    const trailingZeros = DECIMAL_PLACES - trimmedFractional.length;
+                    
+                    // Convert the fractional part to a BigInt and scale it correctly
+                    fractionalWei = BigInt(trimmedFractional) * (BigInt(10) ** BigInt(trailingZeros));
+                }
+                
+                // Convert the integer part to Wei and add the scaled fractional part
+                const integerWei = integerPart * (BigInt(10) ** BigInt(DECIMAL_PLACES));
+                
+                return (integerWei + fractionalWei).toString();
+
+            } catch (e) {
+                // Return null if BigInt conversion fails (e.g., input contains non-numeric chars)
+                return null;
+            }
+        }
+        
+        /**
+         * Formats BigInt (Wei) to a readable number (division by 1e18) using BigInt math for precision.
+         */
+        function formatWei(wei) {
+            if (!wei) return '0';
+            try {
+                // Wei uses 18 decimals, so we use 10^18 for conversion
+                const DECIMAL_PLACES = 18;
+                const WEI_PER_UNIT = BigInt(10) ** BigInt(DECIMAL_PLACES);
+
+                const bigIntValue = BigInt(wei);
+                
+                // For extremely large numbers, return BigInt truncated for readability
+                if (bigIntValue >= WEI_PER_UNIT * BigInt(1000000000000)) { // Example threshold: 1 trillion DATA
+                    return `(BigInt) ${wei.toString().slice(0, 10)}...`;
+                }
+
+                // Convert BigInt to two parts: integer and fractional
+                const integerPart = bigIntValue / WEI_PER_UNIT;
+                let fractionalPart = bigIntValue % WEI_PER_UNIT;
+                
+                // Pad fractional part with leading zeros if necessary
+                let fractionalString = fractionalPart.toString().padStart(DECIMAL_PLACES, '0');
+                
+                // Trim trailing zeros for a clean display, keeping up to 4 significant digits
+                fractionalString = fractionalString.replace(/0+$/, '');
+                fractionalString = fractionalString.slice(0, 4); // Keep up to 4 decimals max for display
+
+                if (fractionalString === '') {
+                    return integerPart.toString();
+                }
+
+                return `${integerPart}.${fractionalString}`;
+
+            } catch (e) {
+                // Fallback for non-BigInt compatible values or errors
+                return `(Wei) ${wei}`;
+            }
+        }
+        
+        /**
+         * Formats a UNIX timestamp (seconds) into a readable date string.
+         */
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'N/A';
+            try {
+                // Convert to milliseconds
+                const date = new Date(parseInt(timestamp) * 1000);
+                // Formats to Portugal/Brazil localized date and time
+                return date.toLocaleString('pt-PT', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit',
+                    timeZoneName: 'short'
+                });
+            } catch (e) {
+                return `(Timestamp) ${timestamp}`;
+            }
+        }
+
+        /**
+         * Renders filter and sorting fields based on the selected entity and adds listeners.
+         */
+        window.updateFilterInputs = function() {
+            const entityName = document.getElementById('entityName').value;
+            const filterInputsContainer = document.getElementById('filterInputs');
+            const orderByField = document.getElementById('orderByField');
+
+            document.getElementById('currentEntityFilter').textContent = entityName.charAt(0).toUpperCase() + entityName.slice(1);
+            filterInputsContainer.innerHTML = ''; // Clears previous filter inputs
+
+            // --- 1. Populate Sorting Fields ---
+            const availableSortFields = SORT_FIELDS[entityName] || [{ value: 'id', label: 'ID' }];
+            let sortOptionsHtml = availableSortFields.map(field => {
+                // Set default selected option based on DEFAULT_SORT configuration
+                const isSelected = document.getElementById('orderByField')?.value === field.value || DEFAULT_SORT[entityName]?.field === field.value ? 'selected' : '';
+                return `<option value="${field.value}" ${isSelected}>${field.label}</option>`;
+            }).join('');
+            orderByField.innerHTML = sortOptionsHtml;
+
+            // Set default direction for the entity
+            const defaultDirection = DEFAULT_SORT[entityName]?.direction || 'desc';
+            document.getElementById('orderDirection').value = document.getElementById('orderDirection')?.value || defaultDirection;
+
+
+            // --- 2. Generate Filter HTML ---
+            let html = '';
+            // Define global input change handler (used for re-generating query preview)
+            const onInputChange = 'updateRawQueryPreview()';
+
+            // Define common date input type
+            const dateInputType = 'datetime-local';
+
+            switch (entityName) {
+                case 'streams':
+                    html = `
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full">
+                                <label for="streamIdFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Stream ID Containing</label>
+                                <input type="text" id="streamIdFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: streamr-dev/my-test-stream">
+                            </div>
+                            <div class="w-full">
+                                <label for="streamMetadataFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Metadata Containing</label>
+                                <input type="text" id="streamMetadataFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 'sensor-data'">
+                            </div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full">
+                                <label for="streamCreatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Creator Address (ID)</label>
+                                <input type="text" id="streamCreatorFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0x... (ETH Address)">
+                            </div>
+                            <div class="w-full">
+                                <label for="streamMinCreatedAt" class="block text-xs font-medium text-gray-400 mb-1">Created After</label>
+                                <input type="${dateInputType}" id="streamMinCreatedAt" onchange="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
+                            </div>
+                        </div>
+                        <div class="w-full">
+                            <label for="streamMaxCreatedAt" class="block text-xs font-medium text-gray-400 mb-1">Created Before</label>
+                            <input type="${dateInputType}" id="streamMaxCreatedAt" onchange="${onInputChange}"
+                                   class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
+                        </div>
+                    `;
+                    break;
+                case 'sponsorships':
+                    html = `
+                        <div class="flex flex-col sm:flex-row gap-4">
+                             <div class="w-full">
+                                 <label for="sponsorshipCreatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Creator Address</label>
+                                 <input type="text" id="sponsorshipCreatorFilter" oninput="${onInputChange}"
+                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                        placeholder="Ex: 0x... (ETH Address)">
+                             </div>
+                             <div class="w-full">
+                                 <label for="sponsorshipMinApy" class="block text-xs font-medium text-gray-400 mb-1">Minimum APY (Decimal Value Ex: 0.1 for 10%)</label>
+                                 <input type="number" step="0.0001" id="sponsorshipMinApy" oninput="${onInputChange}"
+                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                        placeholder="Ex: 0.1">
+                             </div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full">
+                                <label for="sponsorshipMinOperators" class="block text-xs font-medium text-gray-400 mb-1">Minimum Operators</label>
+                                <input type="number" id="sponsorshipMinOperators" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 1">
+                            </div>
+                            <div class="w-full">
+                                <label for="sponsorshipIsRunning" class="block text-xs font-medium text-gray-400 mb-1">Is Active?</label>
+                                <select id="sponsorshipIsRunning" onchange="${onInputChange}" class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white">
+                                    <option value="">Do Not Apply Filter</option>
+                                    <option value="true">Yes</option>
+                                    <option value="false">No</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Additional Financial Filters -->
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full">
+                                <label for="sponsorshipMinRemainingWei" class="block text-xs font-medium text-gray-400 mb-1">Minimum Remaining Fund (in DATA)</label>
+                                <input type="text" id="sponsorshipMinRemainingWei" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 10 (or 10.5)">
+                            </div>
+                            <div class="w-full">
+                                <label for="sponsorshipMaxPayoutPerSec" class="block text-xs font-medium text-gray-400 mb-1">Max Payout Per Second (in DATA)</label>
+                                <input type="text" id="sponsorshipMaxPayoutPerSec" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0.00001">
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'operators':
+                    html = `
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full">
+                                <label for="operatorIdFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Address (ID) Containing</label>
+                                <input type="text" id="operatorIdFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0x... (ETH Address fragment)">
+                            </div>
+                            <div class="w-full">
+                                <label for="operatorMinDelegators" class="block text-xs font-medium text-gray-400 mb-1">Minimum Delegators</label>
+                                <input type="number" id="operatorMinDelegators" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 5">
+                            </div>
+                        </div>
+                        <!-- Staking and Cut Filters -->
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full">
+                                <label for="operatorMinValue" class="block text-xs font-medium text-gray-400 mb-1">Minimum Staked Value (in DATA)</label>
+                                <input type="text" id="operatorMinValue" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 100 (or 100.5)">
+                            </div>
+                            <div class="w-full">
+                                <label for="operatorMinCut" class="block text-xs font-medium text-gray-400 mb-1">Minimum Operator's Cut (0.00 to 1.00)</label>
+                                <input type="number" step="0.0001" id="operatorMinCut" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0.01 (1%)">
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'stakes':
+                    html = `
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full">
+                                <label for="stakeOperatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Operator Address</label>
+                                <input type="text" id="stakeOperatorFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0x... (Full ETH Address)">
+                            </div>
+                            <div class="w-full">
+                                <label for="stakeSponsorshipFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Sponsorship Address</label>
+                                <input type="text" id="stakeSponsorshipFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0x... (Full ETH Address)">
+                            </div>
+                        </div>
+                        <div class="w-full">
+                            <label for="stakeMinAmountWei" class="block text-xs font-medium text-gray-400 mb-1">Minimum Staked Amount (in DATA)</label>
+                            <input type="text" id="stakeMinAmountWei" oninput="${onInputChange}"
+                                   class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                   placeholder="Ex: 1">
+                        </div>
+                    `;
+                    break;
+                case 'delegations':
+                    html = `
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full">
+                                <label for="delegationDelegatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Delegator Address</label>
+                                <input type="text" id="delegationDelegatorFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0x... (Full ETH Address)">
+                            </div>
+                            <div class="w-full">
+                                <label for="delegationOperatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Operator Address</label>
+                                <input type="text" id="delegationOperatorFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0x... (Full ETH Address)">
+                            </div>
+                        </div>
+                        <div class="w-full">
+                            <label for="delegationMinValueWei" class="block text-xs font-medium text-gray-400 mb-1">Minimum Delegated Value (in DATA)</label>
+                            <input type="text" id="delegationMinValueWei" oninput="${onInputChange}"
+                                   class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                   placeholder="Ex: 1">
+                        </div>
+                    `;
+                    break;
+                case 'delegators':
+                    html = `
+                        <p class="text-xs text-blue-400 p-2 bg-blue-900 rounded-lg font-medium">
+                            Note: The Delegator entity requires an exact ID for lookup (does not support list filters).
+                            Please enter a valid address in the field below.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full md:w-1/2">
+                                <label for="delegatorIdFilter" class="block text-xs font-medium text-gray-400 mb-1">Exact Delegator Address (ID)</label>
+                                <input type="text" id="delegatorIdFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-blue-500 rounded-lg bg-gray-700 text-white text-sm font-mono"
+                                       placeholder="0x... (Valid, full ETH Address)">
+                            </div>
+                            <div class="w-full md:w-1/2">
+                                <label for="delegatorMinTotalDelegated" class="block text-xs font-medium text-gray-400 mb-1">Minimum Total Delegated Value (in DATA)</label>
+                                <input type="text" id="delegatorMinTotalDelegated" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-800 text-gray-500 text-sm"
+                                       placeholder="Field Unavailable in Current Subgraph" disabled title="This field does not exist in the test subgraph 'EGWFdhhiWypDuz22Uy7b3F69E9MEkyfU9iAQMttkH5Rj'">
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'stakingEvents':
+                    html = `
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full">
+                                <label for="stakingEventOperatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Operator Address</label>
+                                <input type="text" id="stakingEventOperatorFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0x... (ETH Address)">
+                            </div>
+                            <div class="w-full">
+                                <label for="stakingEventSponsorshipFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Sponsorship Address</label>
+                                <input type="text" id="stakingEventSponsorshipFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0x... (ETH Address)">
+                            </div>
+                        </div>
+                        
+                        <!-- NEW AMOUNT FILTERS -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="w-full">
+                                <label for="stakingEventMinAmount" class="block text-xs font-medium text-gray-400 mb-1">Minimum Amount (in DATA)</label>
+                                <input type="text" id="stakingEventMinAmount" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 100">
+                            </div>
+                            <div class="w-full">
+                                <label for="stakingEventMaxAmount" class="block text-xs font-medium text-gray-400 mb-1">Maximum Amount (in DATA)</label>
+                                <input type="text" id="stakingEventMaxAmount" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 1000">
+                            </div>
+                        </div>
+                        
+                        <!-- DATE FILTERS -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                             <div class="w-full">
+                                 <label for="stakingEventMinDate" class="block text-xs font-medium text-gray-400 mb-1">Minimum Date</label>
+                                 <input type="${dateInputType}" id="stakingEventMinDate" onchange="${onInputChange}"
+                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
+                             </div>
+                             <div class="w-full">
+                                 <label for="stakingEventMaxDate" class="block text-xs font-medium text-gray-400 mb-1">Maximum Date</label>
+                                 <input type="${dateInputType}" id="stakingEventMaxDate" onchange="${onInputChange}"
+                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
+                             </div>
+                        </div>
+                    `;
+                    break;
+                case 'sponsoringEvents':
+                    html = `
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full">
+                                <label for="sponsoringEventSponsorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Sponsor Address</label>
+                                <input type="text" id="sponsoringEventSponsorFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0x... (ETH Address)">
+                            </div>
+                            <div class="w-full">
+                                <label for="sponsoringEventSponsorshipFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Sponsorship Address</label>
+                                <input type="text" id="sponsoringEventSponsorshipFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0x... (ETH Address)">
+                            </div>
+                        </div>
+                        
+                        <!-- NEW AMOUNT FILTERS -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="w-full">
+                                <label for="sponsoringEventMinAmount" class="block text-xs font-medium text-gray-400 mb-1">Minimum Amount (in DATA)</label>
+                                <input type="text" id="sponsoringEventMinAmount" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 100">
+                            </div>
+                            <div class="w-full">
+                                <label for="sponsoringEventMaxAmount" class="block text-xs font-medium text-gray-400 mb-1">Maximum Amount (in DATA)</label>
+                                <input type="text" id="sponsoringEventMaxAmount" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 1000">
+                            </div>
+                        </div>
+
+                        <!-- DATE FILTERS -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                             <div class="w-full">
+                                 <label for="sponsoringEventMinDate" class="block text-xs font-medium text-gray-400 mb-1">Minimum Date</label>
+                                 <input type="${dateInputType}" id="sponsoringEventMinDate" onchange="${onInputChange}"
+                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
+                             </div>
+                             <div class="w-full">
+                                 <label for="sponsoringEventMaxDate" class="block text-xs font-medium text-gray-400 mb-1">Maximum Date</label>
+                                 <input type="${dateInputType}" id="sponsoringEventMaxDate" onchange="${onInputChange}"
+                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
+                             </div>
+                        </div>
+                    `;
+                    break;
+                case 'sponsorshipDailyBuckets':
+                    html = `
+                             <div class="flex flex-col sm:flex-row gap-4">
+                                 <div class="w-full">
+                                     <label for="dailyBucketSponsorshipFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Sponsorship Address</label>
+                                     <input type="text" id="dailyBucketSponsorshipFilter" oninput="${onInputChange}"
+                                            class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                            placeholder="Ex: 0x... (ETH Address)">
+                                 </div>
+                                 <div class="w-full">
+                                     <label for="dailyBucketMinApy" class="block text-xs font-medium text-gray-400 mb-1">Minimum APY (Decimal Value Ex: 0.1 for 10%)</label>
+                                     <input type="number" step="0.0001" id="dailyBucketMinApy" oninput="${onInputChange}"
+                                            class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                            placeholder="Ex: 0.1">
+                                 </div>
+                             </div>
+                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <div class="w-full">
+                                      <label for="dailyBucketMinDate" class="block text-xs font-medium text-gray-400 mb-1">Minimum Date</label>
+                                      <input type="${dateInputType}" id="dailyBucketMinDate" onchange="${onInputChange}"
+                                             class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
+                                  </div>
+                                  <div class="w-full">
+                                      <label for="dailyBucketMaxDate" class="block text-xs font-medium text-gray-400 mb-1">Maximum Date</label>
+                                      <input type="${dateInputType}" id="dailyBucketMaxDate" onchange="${onInputChange}"
+                                             class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
+                                  </div>
+                             </div>
+                    `;
+                    break;
+                case 'operatorDailyBuckets':
+                    html = `
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full">
+                                <label for="operatorDailyOperatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Operator Address</label>
+                                <input type="text" id="operatorDailyOperatorFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0x... (ETH Address)">
+                            </div>
+                            <div class="w-full">
+                                <label for="operatorDailyMinDate" class="block text-xs font-medium text-gray-400 mb-1">Minimum Date</label>
+                                <input type="${dateInputType}" id="operatorDailyMinDate" onchange="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="w-full">
+                                <label for="operatorDailyMinProfits" class="block text-xs font-medium text-gray-400 mb-1">Minimum Profits (in DATA)</label>
+                                <input type="text" id="operatorDailyMinProfits" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 1">
+                            </div>
+                            <div class="w-full">
+                                <label for="operatorDailyMaxLosses" class="block text-xs font-medium text-gray-400 mb-1">Maximum Losses (in DATA)</label>
+                                <input type="text" id="operatorDailyMaxLosses" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 1">
+                            </div>
+                        </div>
+                        <div class="w-full">
+                            <label for="operatorDailyMaxDate" class="block text-xs font-medium text-gray-400 mb-1">Maximum Date</label>
+                            <input type="${dateInputType}" id="operatorDailyMaxDate" onchange="${onInputChange}"
+                                   class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
+                        </div>
+                    `;
+                    break;
+                case 'nodes': // NEW: Node Filters
+                    html = `
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="w-full">
+                                <label for="nodeIdFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Node Address (ID) Containing</label>
+                                <input type="text" id="nodeIdFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 0x... (Node Address fragment)">
+                            </div>
+                            <div class="w-full">
+                                <label for="nodeMetadataFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Metadata Containing</label>
+                                <input type="text" id="nodeMetadataFilter" oninput="${onInputChange}"
+                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
+                                       placeholder="Ex: 'client version'">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                             <div class="w-full">
+                                 <label for="nodeMinLastSeenDate" class="block text-xs font-medium text-gray-400 mb-1">Last Seen After</label>
+                                 <input type="${dateInputType}" id="nodeMinLastSeenDate" onchange="${onInputChange}"
+                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
+                             </div>
+                             <div class="w-full">
+                                 <label for="nodeMaxLastSeenDate" class="block text-xs font-medium text-gray-400 mb-1">Last Seen Before</label>
+                                 <input type="${dateInputType}" id="nodeMaxLastSeenDate" onchange="${onInputChange}"
+                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
+                             </div>
+                        </div>
+                    `;
+                    break;
+                default:
+                    html = '<p class="text-gray-500 text-sm">No advanced filters available for this entity.</p>';
+            }
+
+            filterInputsContainer.innerHTML = html;
+            
+            // Force the query preview update
+            updateRawQueryPreview();
+        }
+
+        /**
+         * Extracts filter values from the DOM and builds the query 'where' string.
+         * IMPORTANT: Now uses dateToTimestamp for date fields and dataToWei for DATA fields.
+         */
+        function getFilterWhereClause(entityName) {
+            const filters = [];
+
+            const safeGetElementValue = (id) => document.getElementById(id)?.value?.trim() || '';
+            const getTimestampValue = (id) => dateToTimestamp(safeGetElementValue(id));
+            const getWeiValue = (id) => dataToWei(safeGetElementValue(id)); // NEW: Convert DATA to Wei for filtering
+
+            switch (entityName) {
+                case 'streams':
+                    const streamId = safeGetElementValue('streamIdFilter');
+                    const streamMetadata = safeGetElementValue('streamMetadataFilter');
+                    const streamCreator = safeGetElementValue('streamCreatorFilter');
+                    const streamMinCreatedAt = getTimestampValue('streamMinCreatedAt');
+                    const streamMaxCreatedAt = getTimestampValue('streamMaxCreatedAt'); 
+                    
+                    if (streamId) filters.push(`idAsString_contains_nocase: "${streamId.toLowerCase()}"`);
+                    if (streamMetadata) filters.push(`metadata_contains_nocase: "${streamMetadata.toLowerCase()}"`);
+                    if (streamCreator) filters.push(`creator: "${streamCreator.toLowerCase()}"`);
+                    if (streamMinCreatedAt) filters.push(`createdAt_gte: "${streamMinCreatedAt}"`);
+                    if (streamMaxCreatedAt) filters.push(`createdAt_lte: "${streamMaxCreatedAt}"`); 
+                    break;
+                case 'sponsorships':
+                    const sponsorshipCreator = safeGetElementValue('sponsorshipCreatorFilter');
+                    const sponsorshipMinApy = safeGetElementValue('sponsorshipMinApy');
+                    const sponsorshipMinOperators = safeGetElementValue('sponsorshipMinOperators');
+                    const sponsorshipIsRunning = safeGetElementValue('sponsorshipIsRunning');
+                    
+                    // Convert DATA to Wei for filtering
+                    const minRemainingWei = getWeiValue('sponsorshipMinRemainingWei'); 
+                    const maxPayoutPerSec = getWeiValue('sponsorshipMaxPayoutPerSec'); 
+
+                    if (sponsorshipCreator) filters.push(`creator: "${sponsorshipCreator.toLowerCase()}"`);
+                    if (sponsorshipMinApy) filters.push(`spotAPY_gte: "${sponsorshipMinApy}"`);
+                    if (sponsorshipMinOperators) filters.push(`minOperators_gte: ${sponsorshipMinOperators}`);
+                    if (sponsorshipIsRunning) filters.push(`isRunning: ${sponsorshipIsRunning}`);
+                    if (minRemainingWei) filters.push(`remainingWei_gte: "${minRemainingWei}"`); // Use converted Wei value
+                    if (maxPayoutPerSec) filters.push(`totalPayoutWeiPerSec_lte: "${maxPayoutPerSec}"`); // Use converted Wei value
+                    break;
+                case 'operators':
+                    const operatorId = safeGetElementValue('operatorIdFilter');
+                    const operatorMinDelegators = safeGetElementValue('operatorMinDelegators');
+                    
+                    // Convert DATA to Wei for filtering
+                    const minStakedValue = getWeiValue('operatorMinValue');
+                    
+                    // Operator Cut is special: it's stored as a fraction of 1e18, but inputting 0.01 is simpler.
+                    const operatorMinCutInput = safeGetElementValue('operatorMinCut');
+                    let operatorMinCutWei = null;
+
+                    if (operatorMinCutInput) {
+                        try {
+                            const cutFraction = parseFloat(operatorMinCutInput);
+                            if (!isNaN(cutFraction) && cutFraction >= 0 && cutFraction <= 1) {
+                                // Multiply by 1e18 (BigInt conversion to match GraphQL type)
+                                operatorMinCutWei = BigInt(Math.round(cutFraction * 1e18)).toString();
+                            }
+                        } catch (e) {
+                            console.error("Invalid operator cut input:", e);
+                        }
+                    }
+
+                    if (operatorId) filters.push(`id_contains: "${operatorId.toLowerCase()}"`);
+                    if (operatorMinDelegators) filters.push(`delegatorCount_gte: ${operatorMinDelegators}`);
+                    if (minStakedValue) filters.push(`valueWithoutEarnings_gte: "${minStakedValue}"`); // Use converted Wei value
+                    if (operatorMinCutWei) filters.push(`operatorsCutFraction_gte: "${operatorMinCutWei}"`);
+                    break;
+                case 'stakes':
+                    const stakeOperator = safeGetElementValue('stakeOperatorFilter');
+                    const stakeSponsorship = safeGetElementValue('stakeSponsorshipFilter');
+                    const minStakeAmount = getWeiValue('stakeMinAmountWei'); // Use converted Wei value
+
+                    if (stakeOperator) filters.push(`operator: "${stakeOperator.toLowerCase()}"`);
+                    if (stakeSponsorship) filters.push(`sponsorship: "${stakeSponsorship.toLowerCase()}"`);
+                    if (minStakeAmount) filters.push(`amountWei_gte: "${minStakeAmount}"`); 
+                    break;
+                case 'delegations':
+                    const delegationDelegator = safeGetElementValue('delegationDelegatorFilter');
+                    const delegationOperator = safeGetElementValue('delegationOperatorFilter');
+                    const minDelegationValue = getWeiValue('delegationMinValueWei'); // Use converted Wei value
+
+                    if (delegationDelegator) filters.push(`delegator: "${delegationDelegator.toLowerCase()}"`);
+                    if (delegationOperator) filters.push(`operator: "${delegationOperator.toLowerCase()}"`);
+                    if (minDelegationValue) filters.push(`_valueDataWei_gte: "${minDelegationValue}"`); 
+                    break;
+                case 'stakingEvents':
+                    // --- NEW AMOUNT FILTERS ---
+                    const seMinAmount = getWeiValue('stakingEventMinAmount');
+                    const seMaxAmount = getWeiValue('stakingEventMaxAmount');
+
+                    const seOperator = safeGetElementValue('stakingEventOperatorFilter');
+                    const seSponsorship = safeGetElementValue('stakingEventSponsorshipFilter');
+                    const seMinDate = getTimestampValue('stakingEventMinDate');
+                    const seMaxDate = getTimestampValue('stakingEventMaxDate'); 
+                    
+                    if (seMinAmount) filters.push(`amount_gte: "${seMinAmount}"`);
+                    if (seMaxAmount) filters.push(`amount_lte: "${seMaxAmount}"`);
+
+                    if (seOperator) filters.push(`operator: "${seOperator.toLowerCase()}"`);
+                    if (seSponsorship) filters.push(`sponsorship: "${seSponsorship.toLowerCase()}"`);
+                    if (seMinDate) filters.push(`date_gte: "${seMinDate}"`);
+                    if (seMaxDate) filters.push(`date_lte: "${seMaxDate}"`); 
+                    break;
+                case 'sponsoringEvents':
+                    // --- NEW AMOUNT FILTERS ---
+                    const speMinAmount = getWeiValue('sponsoringEventMinAmount');
+                    const speMaxAmount = getWeiValue('sponsoringEventMaxAmount');
+
+                    const seSponsor = safeGetElementValue('sponsoringEventSponsorFilter');
+                    const seSponsorship_sponsoring = safeGetElementValue('sponsoringEventSponsorshipFilter');
+                    const seMinDate_sponsoring = getTimestampValue('sponsoringEventMinDate');
+                    const seMaxDate_sponsoring = getTimestampValue('sponsoringEventMaxDate'); 
+
+                    if (speMinAmount) filters.push(`amount_gte: "${speMinAmount}"`);
+                    if (speMaxAmount) filters.push(`amount_lte: "${speMaxAmount}"`);
+
+                    if (seSponsor) filters.push(`sponsor: "${seSponsor.toLowerCase()}"`);
+                    if (seSponsorship_sponsoring) filters.push(`sponsorship: "${seSponsorship_sponsoring.toLowerCase()}"`);
+                    if (seMinDate_sponsoring) filters.push(`date_gte: "${seMinDate_sponsoring}"`);
+                    if (seMaxDate_sponsoring) filters.push(`date_lte: "${seMaxDate_sponsoring}"`); 
+                    break;
+                case 'sponsorshipDailyBuckets':
+                    const sdbSponsorship = safeGetElementValue('dailyBucketSponsorshipFilter');
+                    const sdbMinApy = safeGetElementValue('dailyBucketMinApy');
+                    const sdbMinDate = getTimestampValue('dailyBucketMinDate');
+                    const sdbMaxDate = getTimestampValue('dailyBucketMaxDate'); 
+
+                    if (sdbSponsorship) filters.push(`sponsorship: "${sdbSponsorship.toLowerCase()}"`);
+                    if (sdbMinApy) filters.push(`spotAPY_gte: "${sdbMinApy}"`);
+                    if (sdbMinDate) filters.push(`date_gte: "${sdbMinDate}"`);
+                    if (sdbMaxDate) filters.push(`date_lte: "${sdbMaxDate}"`); 
+                    break;
+                case 'operatorDailyBuckets':
+                    const odbOperator = safeGetElementValue('operatorDailyOperatorFilter');
+                    const odbMinDate = getTimestampValue('operatorDailyMinDate');
+                    const odbMaxDate = getTimestampValue('operatorDailyMaxDate'); 
+                    
+                    // Convert DATA to Wei for filtering
+                    const minProfits = getWeiValue('operatorDailyMinProfits');
+                    const maxLosses = getWeiValue('operatorDailyMaxLosses');
+
+                    if (odbOperator) filters.push(`operator: "${odbOperator.toLowerCase()}"`);
+                    if (odbMinDate) filters.push(`date_gte: "${odbMinDate}"`);
+                    if (odbMaxDate) filters.push(`date_lte: "${odbMaxDate}"`); 
+                    if (minProfits) filters.push(`profitsWei_gte: "${minProfits}"`); // Use converted Wei value
+                    if (maxLosses) filters.push(`lossesWei_lte: "${maxLosses}"`); // Use converted Wei value
+                    break;
+                case 'nodes': // NEW: Node Filters
+                    const nodeId = safeGetElementValue('nodeIdFilter');
+                    const nodeMetadata = safeGetElementValue('nodeMetadataFilter');
+                    const nodeMinLastSeen = getTimestampValue('nodeMinLastSeenDate');
+                    const nodeMaxLastSeen = getTimestampValue('nodeMaxLastSeenDate');
+                    
+                    if (nodeId) filters.push(`id_contains: "${nodeId.toLowerCase()}"`);
+                    if (nodeMetadata) filters.push(`metadata_contains_nocase: "${nodeMetadata.toLowerCase()}"`);
+                    if (nodeMinLastSeen) filters.push(`lastSeen_gte: "${nodeMinLastSeen}"`);
+                    if (nodeMaxLastSeen) filters.push(`lastSeen_lte: "${nodeMaxLastSeen}"`);
+                    break;
+                default:
+                    break;
+            }
+
+            return filters.length > 0 ? filters.join(', ') : '';
+        }
+        
+        /**
+         * Generates the auto-completed GraphQL query from form fields.
+         */
+        function getAutoGeneratedQuery() {
+             const entityName = document.getElementById('entityName').value;
+             const queryLimit = parseInt(document.getElementById('queryLimit').value);
+             const querySkip = parseInt(document.getElementById('querySkip').value); // NEW: Get skip offset
+             const orderByField = document.getElementById('orderByField').value;
+             const orderDirection = document.getElementById('orderDirection').value;
+             const filterContents = getFilterWhereClause(entityName);
+             
+             let query;
+             
+             // Define common args array
+             let argsArray = [
+                 `first: ${queryLimit}`,
+                 `skip: ${querySkip}`, // NEW: Add skip argument
+                 `orderBy: ${orderByField}`,
+                 `orderDirection: ${orderDirection}`
+             ];
+
+             // Special logic for Delegator (single ID query)
+             if (entityName === 'delegators') {
+                 // The delegator query ignores limit and ordering on the root field, only requires ID.
+                 const delegatorId = document.getElementById('delegatorIdFilter').value.trim() || '0x000000000000000000000000000000000000dead';
+                 
+                 query = `
+                     query GetDelegatorDetailsSimplified {
+                         delegator(id: "${delegatorId.toLowerCase()}", subgraphError: allow) {
+                             id
+                             cumulativeEarningsWei
+                             numberOfDelegations
+                             totalValueDataWei
+                             queueEntries { id operator { id } }
+                             delegations(
+                                 first: 10
+                                 orderBy: id
+                                 orderDirection: asc
+                             ) {
+                                 id
+                                 operator { id }
+                                 _valueDataWei
+                                 latestDelegationTimestamp
+                                 operatorTokenBalanceWei
+                                 isSelfDelegation
+                             }
+                         }
+                     }
+                 `;
+             } else {
+                 // Standard list query
+                 const fields = getQueryFields(entityName);
+
+                 if (filterContents) {
+                     argsArray.push(`where: {${filterContents}}`);
+                 }
+
+                 argsArray.push(`subgraphError: allow`);
+                 const args = argsArray.join(', ');
+
+
+                 query = `
+                     query GetEntities {
+                         ${entityName}(${args}) {
+                             ${fields}
+                         }
+                     }
+                 `;
+             }
+             return query;
+        }
+
+        /**
+         * Generates the GraphQL query and populates the Raw Query field.
+         */
+        window.updateRawQueryPreview = function() {
+             const rawQueryInput = document.getElementById('rawQueryInput');
+             
+             if (!isManualOverride) {
+                 // Apply trim() to remove leading newline characters
+                 rawQueryInput.value = getAutoGeneratedQuery().trim();
+                 document.getElementById('manualOverrideHint').classList.add('hidden');
+             } else {
+                 // If manually overridden, check if the content matches the auto-generated query to turn off the flag
+                 const currentAutoQuery = getAutoGeneratedQuery().trim();
+                 if (rawQueryInput.value.trim() === currentAutoQuery) {
+                    isManualOverride = false;
+                    rawQueryInput.value = currentAutoQuery;
+                    document.getElementById('manualOverrideHint').classList.add('hidden');
+                 } else {
+                    document.getElementById('manualOverrideHint').classList.remove('hidden');
+                 }
+             }
+
+             checkInputs(); 
+        }
+
+        // --- GraphQL Query Logic ---
+
+        /**
+         * Helper function to retrieve the fields for a given entity type.
+         */
+        function getQueryFields(entityName) {
+            switch (entityName) {
+                case 'streams':
+                    return `id idAsString metadata createdAt updatedAt permissions { id userId canEdit canGrant } storageNodes { id }`;
+                case 'sponsorships':
+                    return `id creator totalPayoutWeiPerSec remainingWei spotAPY operatorCount stream { id } minOperators isRunning`;
+                case 'operators':
+                    // **CORRECTED FIELDS:** Include metadataJsonString, nodes, and contractVersion
+                    return `id delegatorCount totalStakeInSponsorshipsWei valueWithoutEarnings operatorsCutFraction owner cumulativeProfitsWei cumulativeEarningsWei metadataJsonString nodes contractVersion`;
+                case 'stakes':
+                    // **CORRECTED FIELDS:** Ensure nested operator details include metadata fields
+                    return `id sponsorship { id stream { idAsString } spotAPY } operator { id owner operatorsCutFraction metadataJsonString } amountWei lockedWei earningsWei joinTimestamp`;
+                case 'delegations':
+                    return `id delegator { id } operator { id } _valueDataWei latestDelegationTimestamp isSelfDelegation`;
+                case 'stakingEvents':
+                    // **CORRECTED FIELDS:** Ensure nested operator details include metadata fields
+                    return `id amount date operator { id owner operatorsCutFraction metadataJsonString } sponsorship { id stream { idAsString } spotAPY }`;
+                case 'sponsoringEvents':
+                    return `id sponsor sponsorship { id stream { idAsString } spotAPY } amount date`;
+                case 'sponsorshipDailyBuckets':
+                    return `id date totalStakedWei remainingWei spotAPY operatorCount`;
+                case 'operatorDailyBuckets':
+                    // **CORRECTED FIELDS:** Ensure nested operator details include metadata fields
+                    return `id date cumulativeEarningsWei dataTokenBalanceWei delegatorCountAtStart delegatorCountChange lossesWei operatorsCutWei profitsWei totalDelegatedWei totalStakeInSponsorshipsWei totalUndelegatedWei valueWithoutEarnings operator { id metadataJsonString nodes }`;
+                case 'nodes': // NEW: Node Fields
+                    return `
+                        id
+                        createdAt
+                        lastSeen
+                        metadata
+                        storedStreams(first: 10) { id stream { idAsString } }
+                    `;
+                default:
+                    return `id`;
+            }
+        }
+
+        /**
+         * Executes the GraphQL query and displays the results.
+         */
+        window.executeQuery = async function() {
+            const graphBaseUrl = document.getElementById('graphBaseUrl').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const subgraphId = document.getElementById('subgraphId').value.trim();
+            const entityName = document.getElementById('entityName').value;
+            
+            const rawQueryInput = document.getElementById('rawQueryInput');
+            
+            const outputArea = document.getElementById('outputArea');
+            const errorAlert = document.getElementById('errorAlert');
+            const executeButton = document.getElementById('executeButton');
+            const copyButton = document.getElementById('copyButton');
+            
+            // 1. URL CONSTRUCTION
+            const endpointUrl = `${graphBaseUrl}${apiKey}/subgraphs/id/${subgraphId}`;
+            
+            let query = rawQueryInput.value.trim(); 
+            let expectedEntityKey = entityName; 
+
+            if (!query) {
+                errorAlert.textContent = 'The query field cannot be empty.';
+                errorAlert.classList.remove('hidden');
+                return;
+            }
+
+            // Try to deduce the main key for delegators or raw mode
+            if (entityName === 'delegators' || isManualOverride) {
+                const match = query.match(/\{[\s\n]*(\w+)(?:\s|\()/i);
+                expectedEntityKey = match ? match[1] : entityName;
+            }
+
+            // 2. VALIDATION AND UI RESET
+            outputArea.innerHTML = '<p class="text-yellow-400">Loading data...</p>';
+            errorAlert.classList.add('hidden');
+            copyButton.classList.add('hidden');
+            executeButton.disabled = true;
+
+            // Disable pagination buttons temporarily during query execution
+            document.getElementById('prevPageButton').disabled = true;
+            document.getElementById('nextPageButton').disabled = true;
+
+
+            if (!apiKey || !subgraphId) {
+                errorAlert.textContent = 'Please enter the API Key and Subgraph ID in Settings.';
+                errorAlert.classList.remove('hidden');
+                executeButton.disabled = false;
+                return;
+            }
+
+            console.log("GraphQL Endpoint:", endpointUrl);
+            console.log("GraphQL Query:", query);
+
+            // 3. QUERY EXECUTION WITH BACKOFF
+            try {
+                let response;
+                let attempt = 0;
+                const maxRetries = 5;
+
+                while (attempt < maxRetries) {
+                    try {
+                        response = await fetch(endpointUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ query }),
+                        });
+                        if (response.status !== 429) {  
+                            break;  
+                        }
+                    } catch (e) {
+                        console.error(`Attempt ${attempt + 1} failed:`, e);
+                    }
+
+                    attempt++;
+                    if (attempt < maxRetries) {
+                        const delay = Math.pow(2, attempt) * 1000;
+                        console.log(`Retrying in ${delay / 1000}s...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+
+                if (!response || !response.ok) {
+                    const errorText = response ? await response.text() : 'No response from server.';
+                    throw new Error(`HTTP Response: ${response?.status || 'N/A'}. Detalhes: ${errorText.substring(0, 100)}...`);
+                }
+
+                const jsonResponse = await response.json();
+                
+                if (jsonResponse.errors) {
+                    throw new Error(JSON.stringify(jsonResponse.errors, null, 2));
+                }
+                
+                // 4. RESPONSE PROCESSING
+                let rawData = jsonResponse.data;
+                
+                // --- Determine Data Structure for Formatting ---
+                let dataToProcess;
+
+                if (Object.keys(rawData).length > 1 || isManualOverride) {
+                    // Treat as multiple results or complex manual query; process all root fields
+                    dataToProcess = rawData;
+                    lastResultCount = document.getElementById('queryLimit').value; // Cannot reliably count on complex multi-queries
+                }
+                else if (rawData[expectedEntityKey]) {
+                    // Standard case: single entity list or object
+                    dataToProcess = Array.isArray(rawData[expectedEntityKey]) ? rawData[expectedEntityKey] : [rawData[expectedEntityKey]];
+                    lastResultCount = Array.isArray(rawData[expectedEntityKey]) ? rawData[expectedEntityKey].length : 1;
+                } else {
+                    // Fallback to display the full JSON
+                    dataToProcess = rawData;
+                    lastResultCount = 0;
+                }
+                
+                // 5. FORMATTING AND DISPLAY
+                
+                const processEntityList = (data) => {
+                     // Ensure data is treated as an array of objects for iteration
+                     const list = Array.isArray(data) ? data : (data ? [data] : []);
+
+                     return list.map(item => {
+                         const newItem = { ...item };
+                         
+                         const recursiveProcessor = (obj) => {
+                             for (const key in obj) {
+                                 if (obj.hasOwnProperty(key)) {
+                                     // BigInt/Wei Formatting 
+                                     if (key.endsWith('Wei') || key === 'amount' || key.toLowerCase().includes('value')) {
+                                         if (String(obj[key]).length > 10 && String(obj[key]).match(/^\d+$/)) {
+                                              obj[`${key}_formatted`] = formatWei(obj[key]);
+                                         }
+                                     }
+                                     // Timestamp Formatting
+                                     if (key.toLowerCase().includes('timestamp') || key.toLowerCase().includes('date') || key.toLowerCase().includes('createdat') || key.toLowerCase().includes('lastseen')) {
+                                          if (String(obj[key]).length <= 10 && String(obj[key]).match(/^\d+$/)) {
+                                              obj[`${key}_formatted_date`] = formatTimestamp(obj[key]);
+                                          }
+                                     }
+                                     // Nested object recursion
+                                     if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+                                         recursiveProcessor(obj[key]);
+                                     }
+                                 }
+                             }
+                         };
+                         recursiveProcessor(newItem);
+ 
+                         // Top-level object specific formatting (outside recursive)
+                         if (newItem.operator?.operatorsCutFraction) {
+                              const cut = formatWei(newItem.operator.operatorsCutFraction);
+                              newItem.operator.operatorsCutFraction_formatted_percent = `${(parseFloat(cut) * 100).toFixed(2)}%`;
+                         }
+                         if (newItem.sponsorship?.spotAPY) {
+                              newItem.sponsorship.spotAPY_formatted_percent = `${(parseFloat(newItem.sponsorship.spotAPY) * 100).toFixed(2)}%`;
+                         }
+                         return newItem;
+                     });
+                };
+                
+                let finalFormattedOutput = {};
+
+                if (Array.isArray(dataToProcess)) {
+                     // Single result list
+                     finalFormattedOutput = processEntityList(dataToProcess);
+                } else {
+                    // Process multiple root fields (dataToProcess = rawData)
+                    for (const key in dataToProcess) {
+                         if (dataToProcess.hasOwnProperty(key)) {
+                             const data = dataToProcess[key];
+                             finalFormattedOutput[key] = processEntityList(data);
+                         }
+                    }
+                }
+                
+                const jsonString = JSON.stringify(finalFormattedOutput, null, 2);
+                
+                outputArea.innerHTML = `<pre class="text-xs sm:text-sm font-mono">${jsonString}</pre>`;
+                outputArea.dataset.rawJson = jsonString; 
+                copyButton.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("GraphQL Query Error:", error);
+                errorAlert.textContent = `Error loading data: ${error.message}`;
+                outputArea.innerHTML = `<p class="text-red-400">Query failed.</p>`;
+                errorAlert.classList.remove('hidden');
+                copyButton.classList.add('hidden');
+            } finally {
+                executeButton.disabled = false;
+                checkPaginationButtons(); // Re-enable based on the last result count
+            }
+        }
+
+        // Initialize Firebase and add input listeners.
+        window.onload = function () {
+            initializeFirebase().then(() => {
+                document.getElementById('executeButton').disabled = false;
+            });
+            
+            // Initialize filters with the default entity ('streams')
+            document.getElementById('entityName').value = 'stakingEvents'; // Set default entity to Staking Event
+            updateFilterInputs();
+
+            // Note: CheckInputs now reads from the hidden fields, which are populated on load by their default value.
+            
+            // Call the initial query on load (if inputs are valid)
+            setTimeout(() => {
+                checkInputs();
+                // updateFilterInputs() calls updateRawQueryPreview(), which fills the field.
+                if (!document.getElementById('executeButton').disabled) {
+                    executeQuery();
+                }
+            }, 500); 
+        }
+
+    </script>
+</body>
+</html>
