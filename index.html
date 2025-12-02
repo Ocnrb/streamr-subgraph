@@ -5,58 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Streamr Subgraph Explorer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Custom Dark Mode CSS Overrides */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #1a1a1a; /* Darker background */
         }
-        .container-card {
-            /* Card background in dark gray */
-            background: #2d2d2d;
-            border-radius: 1.5rem;
-            /* Darker, more subtle shadow */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-        }
+        /* Custom scrollbar for output area */
         .scrollable-content {
             max-height: 400px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-break: break-all;
         }
-        .btn-primary {
-            /* Retain Streamr blue accent */
-            background-color: #007bff;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            font-weight: 600;
-            transition: background-color 0.2s;
+        /* Horizontal layout adjustments for medium+ screens */
+        @media (min-width: 768px) {
+            .scrollable-content {
+                max-height: calc(100vh - 280px);
+                min-height: 500px;
+            }
         }
-        .btn-primary:hover:not(:disabled) {
-            background-color: #0056b3;
-        }
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .glow-blue {
-            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
-        }
-        /* Custom styles for JSON output area (code view) */
+        /* JSON output area */
         #outputArea {
-            background-color: #000000; /* True black for code area */
-            color: #d4d4d4; /* Light text */
-            border-color: #4a4a4a;
-        }
-        .modal {
-            background-color: rgba(0, 0, 0, 0.7);
-        }
-        .modal-content {
-            background-color: #2d2d2d;
-            border-radius: 1rem;
+            background-color: #000000;
+            color: #d4d4d4;
         }
         /* Ensure datetime-local input is styled consistently */
         input[type="datetime-local"] {
@@ -64,50 +37,53 @@
         }
     </style>
 </head>
-<body class="p-4 sm:p-8 min-h-screen flex justify-center text-gray-100">
+<body class="bg-[#121212] p-4 sm:p-8 min-h-screen flex justify-center text-gray-200">
 
     <!-- SETTINGS MODAL -->
-    <div id="settingsModal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
-        <div class="modal-content p-6 w-11/12 md:w-1/2 max-w-lg">
-            <h3 class="text-2xl font-bold text-gray-200 mb-4 flex justify-between items-center">
+    <div id="settingsModal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center hidden">
+        <div class="bg-[#1E1E1E] rounded-lg p-6 w-11/12 md:w-1/2 max-w-lg border border-[#333333] shadow-2xl">
+            <h3 class="text-2xl font-bold text-white mb-4 flex justify-between items-center">
                 Settings
-                <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white">&times;</button>
+                <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white transition-colors">&times;</button>
             </h3>
             
             <div class="space-y-4">
                 <!-- Gateway Base URL -->
                 <div>
-                    <label for="modalGraphBaseUrl" class="block text-sm font-medium text-gray-400 mb-1">
+                    <label for="modalGraphBaseUrl" class="block text-sm font-medium text-gray-400 mb-2">
                         Gateway Base URL
                     </label>
                     <input type="url" id="modalGraphBaseUrl" value="https://gateway-arbitrum.network.thegraph.com/api/"
-                           class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150"
+                           class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors"
                            placeholder="The Graph Gateway Base URL">
                 </div>
 
                 <!-- API Key Input -->
                 <div>
-                    <label for="modalApiKey" class="block text-sm font-medium text-gray-400 mb-1">
+                    <label for="modalApiKey" class="block text-sm font-medium text-gray-400 mb-2">
                         The Graph API Key
                     </label>
-                    <input type="text" id="modalApiKey" value="bb77dd994c8e90edcbd73661a326f068"
-                           class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150"
+                    <input type="text" id="modalApiKey" value="d8acda6777ed7cbaccfd3f1102d447f6"
+                           class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors"
                            placeholder="Enter your The Graph API Key">
                 </div>
                 
                 <!-- Subgraph ID Input -->
                 <div>
-                    <label for="modalSubgraphId" class="block text-sm font-medium text-gray-400 mb-1">
+                    <label for="modalSubgraphId" class="block text-sm font-medium text-gray-400 mb-2">
                         Subgraph ID
                     </label>
                     <input type="text" id="modalSubgraphId" value="EGWFdhhiWypDuz22Uy7b3F69E9MEkyfU9iAQMttkH5Rj"
-                           class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150"
+                           class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors"
                            placeholder="Enter the Subgraph ID">
                 </div>
 
-                <div class="pt-4 flex justify-end">
-                    <button onclick="saveSettingsAndClose()" class="btn-primary">
-                        Save and Update
+                <div class="pt-4 flex gap-4">
+                    <button onclick="closeSettingsModal()" class="w-full bg-[#444444] hover:bg-[#555555] text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="saveSettingsAndClose()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                        Save & Update
                     </button>
                 </div>
             </div>
@@ -115,11 +91,11 @@
     </div>
     <!-- END MODAL -->
 
-    <div id="app" class="w-full max-w-4xl space-y-8">
+    <div id="app" class="w-full max-w-[95vw] xl:max-w-[1800px]">
         <!-- HEADER SECTION -->
-        <header class="text-center flex justify-between items-center">
+        <header class="text-center flex justify-between items-center mb-6">
             <div class="flex-grow text-center">
-                <h1 class="text-4xl font-extrabold text-gray-100 mb-2">
+                <h1 class="text-4xl font-bold text-white mb-2">
                     Streamr Subgraph Explorer
                 </h1>
                 <p class="text-lg text-gray-400">
@@ -128,85 +104,81 @@
             </div>
             
             <!-- SETTINGS BUTTON -->
-            <button onclick="openSettingsModal()" class="text-gray-400 hover:text-blue-400 transition duration-150 p-2 rounded-full flex-shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings">
+            <button onclick="openSettingsModal()" class="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/5 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"></circle>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
             </button>
         </header>
 
-        <!-- QUERY CONFIGURATION CARD (CLEANED UP) -->
-        <div class="container-card p-6 md:p-8">
-            <h2 class="text-2xl font-bold text-gray-200 mb-6">Query Configuration</h2>
+        <!-- HORIZONTAL LAYOUT: Left (Query Config) | Right (Results) -->
+        <div class="flex flex-col md:flex-row gap-6">
+            
+            <!-- LEFT PANEL: Query Configuration -->
+            <div class="w-full md:w-1/2 xl:w-[45%] space-y-6 flex-shrink-0">
+                
+                <!-- QUERY CONFIGURATION CARD -->
+                <div class="bg-[#1E1E1E] rounded-lg p-5 sm:p-6 border border-[#333333] shadow-xl">
+            <h2 class="text-xl font-bold text-white mb-4">Query Configuration</h2>
 
             <div class="space-y-4">
 
                 <!-- HIDDEN API/SUBGRAPH INPUTS (USED BY JS) -->
                 <input type="hidden" id="graphBaseUrl" value="https://gateway-arbitrum.network.thegraph.com/api/">
-                <input type="hidden" id="apiKey" value="bb77dd994c8e90edcbd73661a326f068">
+                <input type="hidden" id="apiKey" value="d8acda6777ed7cbaccfd3f1102d447f6">
                 <input type="hidden" id="subgraphId" value="EGWFdhhiWypDuz22Uy7b3F69E9MEkyfU9iAQMttkH5Rj">
 
 
-                <div class="grid grid-cols-1 sm:grid-cols-5 gap-4"> <!-- Grid updated to 5 columns -->
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-4">
                     
-                    <!-- 4. Entity Selector -->
-                    <div class="sm:col-span-1">
-                        <label for="entityName" class="block text-sm font-medium text-gray-400 mb-1">
+                    <!-- Entity Selector -->
+                    <div class="sm:col-span-2">
+                        <label for="entityName" class="block text-sm font-medium text-gray-400 mb-2">
                             Entity to Query
                         </label>
                         <select id="entityName" onchange="updateFilterInputs(); updateRawQueryPreview();"
-                                class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150">
-                            <option value="streams">Stream (Data Flow)</option>
-                            <option value="sponsorships">Sponsorship</option>
-                            <option value="operators">Operator</option>
-                            <option value="stakes">Stake (Sponsorship Stake)</option>
-                            <option value="delegations">Delegation (Operator Stake)</option>
-                            <option value="delegators">Delegator (Delegator Profile)</option>
-                            <option value="stakingEvents" selected>Staking Event</option>
-                            <option value="sponsoringEvents">Sponsoring Event</option>
-                            <option value="sponsorshipDailyBuckets">Sponsorship Daily Bucket (Daily Metrics)</option>
-                            <option value="operatorDailyBuckets">Operator Daily Bucket (Daily Metrics)</option>
-                            <option value="nodes">Node (Storage Node)</option>
+                                class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors">
+                            <!-- Options will be populated by JavaScript -->
                         </select>
                     </div>
 
-                    <!-- 5. Limit Input -->
+                    <!-- Limit Input -->
                     <div class="sm:col-span-1">
-                        <label for="queryLimit" class="block text-sm font-medium text-gray-400 mb-1">
+                        <label for="queryLimit" class="block text-sm font-medium text-gray-400 mb-2">
                             Results (Max 1000)
                         </label>
                         <input type="number" id="queryLimit" value="10" min="1" max="1000" oninput="updateRawQueryPreview()"
-                               class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150">
+                               class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors">
                     </div>
 
-                    <!-- 9. Result Offset (Skip) -->
+                    <!-- Offset (Skip) -->
                     <div class="sm:col-span-1">
-                        <label for="querySkip" class="block text-sm font-medium text-gray-400 mb-1">
-                            Result Offset (Skip)
+                        <label for="querySkip" class="block text-sm font-medium text-gray-400 mb-2">
+                            Offset (Skip)
                         </label>
                         <input type="number" id="querySkip" value="0" min="0" oninput="updateRawQueryPreview(); checkPaginationButtons();"
-                               class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150">
+                               class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors">
                     </div>
 
-                    <!-- 7. Order By Field Selector -->
+                    <!-- Order By Field Selector -->
                     <div class="sm:col-span-1">
-                        <label for="orderByField" class="block text-sm font-medium text-gray-400 mb-1">
-                            Order By Field
+                        <label for="orderByField" class="block text-sm font-medium text-gray-400 mb-2">
+                            Order By
                         </label>
                         <select id="orderByField" onchange="updateRawQueryPreview();"
-                                class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150">
+                                class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors">
                             <!-- Options populated by JS: updateFilterInputs() -->
                         </select>
                     </div>
 
-                    <!-- 8. Order Direction Selector -->
+                    <!-- Order Direction Selector -->
                     <div class="sm:col-span-1">
-                        <label for="orderDirection" class="block text-sm font-medium text-gray-400 mb-1">
+                        <label for="orderDirection" class="block text-sm font-medium text-gray-400 mb-2">
                             Order Direction
                         </label>
                         <select id="orderDirection" onchange="updateRawQueryPreview();"
-                                class="w-full p-3 border border-gray-600 rounded-xl bg-gray-700 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150">
+                                class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors">
                             <option value="desc" selected>Descending (DESC)</option>
                             <option value="asc">Ascending (ASC)</option>
                         </select>
@@ -214,8 +186,8 @@
                 </div>
                 
                 <!-- Advanced Filters Container -->
-                <div id="advancedFiltersContainer" class="p-4 border border-gray-700 rounded-xl bg-gray-800 space-y-3">
-                    <h3 class="text-lg font-semibold text-gray-200 border-b border-gray-700 pb-2 mb-3">Advanced Filters (<span id="currentEntityFilter">Staking Event</span>)</h3>
+                <div id="advancedFiltersContainer" class="p-4 bg-[#2C2C2C] border border-[#333333] rounded-lg space-y-3">
+                    <h3 class="text-sm font-semibold text-white border-b border-[#333333] pb-2 mb-3">Advanced Filters (<span id="currentEntityFilter">Staking Event</span>)</h3>
                     <div id="filterInputs">
                         <!-- Filter inputs will be injected here via JavaScript -->
                     </div>
@@ -223,41 +195,47 @@
 
                 <!-- Manual Query Field (Auto-populated) -->
                 <div id="rawQueryContainer">
-                    <label for="rawQueryInput" class="block text-sm font-medium text-gray-200 mb-1">
+                    <label for="rawQueryInput" class="block text-sm font-medium text-gray-400 mb-2">
                         GraphQL Query Preview/Edit (Manual Override)
                     </label>
                     <textarea id="rawQueryInput" rows="8" oninput="checkRawOverride()"
-                                 class="w-full p-3 border border-gray-600 rounded-xl bg-gray-900 text-white font-mono text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150"
+                                 class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors"
                                  placeholder="Paste your GraphQL query here or edit the preview."></textarea>
-                    <p id="manualOverrideHint" class="text-xs text-yellow-500 mt-1 hidden">Manual Query Active: Form filters are ignored.</p>
+                    <p id="manualOverrideHint" class="text-xs text-amber-500 mt-1 hidden">Manual Query Active: Form filters are ignored.</p>
                 </div>
                 
-                <!-- 6. Execute Button and Pagination Controls (UPDATED) -->
+                <!-- Execute Button and Pagination Controls -->
                 <div class="pt-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
                     
                     <!-- Pagination Buttons -->
-                    <div class="flex space-x-2 w-full sm:w-auto">
-                        <button id="prevPageButton" onclick="changePage(-1)" class="btn-primary flex-grow sm:flex-grow-0 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-800 disabled:text-gray-500" disabled>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button id="prevPageButton" onclick="changePage(-1)" class="flex-grow sm:flex-grow-0 bg-[#444444] hover:bg-[#555555] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors" disabled>
                             &larr; Previous
                         </button>
-                        <button id="nextPageButton" onclick="changePage(1)" class="btn-primary flex-grow sm:flex-grow-0" disabled>
+                        <button id="nextPageButton" onclick="changePage(1)" class="flex-grow sm:flex-grow-0 bg-[#444444] hover:bg-[#555555] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors" disabled>
                             Next &rarr;
                         </button>
                     </div>
 
                     <!-- Execute Button -->
-                    <button id="executeButton" onclick="executeQuery()" class="btn-primary w-full sm:w-auto glow-blue">
-                        Execute
+                    <button id="executeButton" onclick="executeQuery()" class="w-full sm:w-auto bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        Execute Query
                     </button>
                 </div>
             </div>
         </div>
+                
+            </div>
+            <!-- END LEFT PANEL -->
 
-        <!-- OUTPUT SECTION -->
-        <div class="container-card p-6 md:p-8">
-            <h2 class="text-2xl font-bold text-gray-200 mb-6 flex justify-between items-center">
+            <!-- RIGHT PANEL: Results -->
+            <div class="w-full md:w-1/2 xl:w-[55%] md:sticky md:top-6 md:self-start">
+                
+                <!-- OUTPUT SECTION -->
+                <div class="bg-[#1E1E1E] rounded-lg p-5 sm:p-6 border border-[#333333] shadow-xl h-full">
+            <h2 class="text-xl font-bold text-white mb-4 flex justify-between items-center">
                 Query Result
-                <button id="copyButton" class="text-sm text-blue-400 hover:text-blue-200 font-medium hidden" onclick="copyResults()">
+                <button id="copyButton" class="text-sm text-blue-400 hover:text-blue-300 font-medium hidden transition-colors" onclick="copyResults()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-1">
                         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -267,12 +245,18 @@
             </h2>
 
             <!-- Loading/Error/Result Display -->
-            <div id="outputArea" class="border border-gray-700 rounded-xl p-4 text-sm scrollable-content min-h-24">
-                <p class="text-gray-400">Waiting for query execution...</p>
+            <div id="outputArea" class="border border-[#333333] rounded-lg p-4 text-sm scrollable-content min-h-[400px]">
+                <p class="text-gray-500">Waiting for query execution...</p>
             </div>
             
             <p id="errorAlert" class="text-red-400 font-medium mt-4 hidden"></p>
+                </div>
+                
+            </div>
+            <!-- END RIGHT PANEL -->
+            
         </div>
+        <!-- END HORIZONTAL LAYOUT -->
 
     </div>
 
@@ -290,83 +274,893 @@
         let isAuthReady = false;
         let isManualOverride = false; 
         
-        
-        // --- Sorting Fields Definition ---
-        const SORT_FIELDS = {
-            streams: [
-                { value: 'id', label: 'ID (Address/Path)' },
-                { value: 'idAsString', label: 'ID (Substring Searchable)' },
-                { value: 'createdAt', label: 'Created At (Timestamp)' },
-                { value: 'updatedAt', label: 'Updated At (Timestamp)' },
-            ],
-            sponsorships: [
-                { value: 'id', label: 'ID (Address)' },
-                { value: 'spotAPY', label: 'Spot APY' },
-                { value: 'remainingWei', label: 'Remaining Funds (Wei)' },
-                { value: 'totalPayoutWeiPerSec', label: 'Payout Per Second' },
-                { value: 'operatorCount', label: 'Operator Count' },
-            ],
-            operators: [
-                { value: 'id', label: 'ID (Address)' },
-                { value: 'valueWithoutEarnings', label: 'Total Value Staked' },
-                { value: 'delegatorCount', label: 'Delegator Count' },
-                { value: 'cumulativeEarningsWei', label: 'Cumulative Earnings' },
-                { value: 'operatorsCutFraction', label: 'Operator Cut Fraction' },
-            ],
-            stakes: [
-                { value: 'id', label: 'ID' },
-                { value: 'amountWei', label: 'Amount Staked (Wei)' },
-                { value: 'joinTimestamp', label: 'Join Date' },
-            ],
-            delegations: [
-                { value: 'id', label: 'ID' },
-                { value: '_valueDataWei', label: 'Value Delegated (Wei)' },
-                { value: 'latestDelegationTimestamp', label: 'Delegation Date' },
-            ],
-            delegators: [
-                { value: 'id', label: 'ID (Address)' },
-            ],
-            stakingEvents: [
-                { value: 'date', label: 'Event Date' },
-                { value: 'amount', label: 'Amount' },
-            ],
-            sponsoringEvents: [
-                { value: 'date', label: 'Event Date' },
-                { value: 'amount', label: 'Amount' },
-            ],
-            sponsorshipDailyBuckets: [
-                { value: 'date', label: 'Date' },
-                { value: 'spotAPY', label: 'Spot APY' },
-                { value: 'totalStakedWei', label: 'Total Staked Wei' },
-                { value: 'remainingWei', label: 'Remaining Wei' },
-            ],
-            operatorDailyBuckets: [
-                { value: 'date', label: 'Date' },
-                { value: 'profitsWei', label: 'Profits (Wei)' },
-                { value: 'lossesWei', label: 'Losses (Wei)' },
-                { value: 'totalDelegatedWei', label: 'Total Delegated (Wei)' },
-            ],
-            nodes: [ // NEW: Node Sorting Fields
-                { value: 'id', label: 'ID (Address)' },
-                { value: 'lastSeen', label: 'Last Seen Date' },
-                { value: 'createdAt', label: 'Creation Date' },
-            ],
+        // =====================================================
+        // ENTITY_CONFIG - Centralized Configuration for All Entities
+        // =====================================================
+        const ENTITY_CONFIG = {
+            // ─────────────────────────────────────────────────
+            // STREAMS & PERMISSIONS
+            // ─────────────────────────────────────────────────
+            streams: {
+                label: 'Stream',
+                category: 'Data',
+                queryType: 'list',
+                singularQuery: 'stream',
+                description: 'Data streams on the Streamr network - includes permissions, storage nodes and sponsorships',
+                fields: `id idAsString metadata createdAt updatedAt 
+                    permissions(first: 10) { id userId userAddress canEdit canDelete canGrant publishExpiration subscribeExpiration } 
+                    storageNodes(first: 5) { id node { id metadata lastSeen } } 
+                    sponsorships(first: 5) { id spotAPY totalStakedWei remainingWei isRunning operatorCount }`,
+                sortFields: [
+                    { value: 'id', label: 'ID (Address/Path)' },
+                    { value: 'idAsString', label: 'ID (Substring Searchable)' },
+                    { value: 'createdAt', label: 'Created At' },
+                    { value: 'updatedAt', label: 'Updated At' },
+                ],
+                defaultSort: { field: 'createdAt', direction: 'desc' },
+                filters: [
+                    { id: 'streamIdFilter', field: 'idAsString_contains_nocase', label: 'Stream ID Contains', type: 'text', placeholder: 'Ex: streamr-dev/my-stream' },
+                    { id: 'streamIdExact', field: 'id', label: 'Stream ID (Exact)', type: 'text', placeholder: 'Full stream ID' },
+                    { id: 'streamIdStartsWith', field: 'idAsString_starts_with', label: 'Stream ID Starts With', type: 'text', placeholder: '0x...' },
+                    { id: 'streamMetadataFilter', field: 'metadata_contains_nocase', label: 'Metadata Contains', type: 'text', placeholder: "Ex: 'sensor-data'" },
+                    { id: 'streamMetadataNotNull', field: 'metadata_not', label: 'Has Metadata (not empty)', type: 'text', placeholder: '' },
+                    { id: 'streamCreatorFilter', field: 'creator', label: 'Creator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'streamMinCreatedAt', field: 'createdAt_gte', label: 'Created After', type: 'datetime' },
+                    { id: 'streamMaxCreatedAt', field: 'createdAt_lte', label: 'Created Before', type: 'datetime' },
+                    { id: 'streamMinUpdatedAt', field: 'updatedAt_gte', label: 'Updated After', type: 'datetime' },
+                    { id: 'streamMaxUpdatedAt', field: 'updatedAt_lte', label: 'Updated Before', type: 'datetime' },
+                ],
+            },
+            streamPermissions: {
+                label: 'Stream Permission',
+                category: 'Data',
+                queryType: 'list',
+                singularQuery: 'streamPermission',
+                description: 'User permissions on streams - publish, subscribe, edit, delete and grant capabilities',
+                fields: 'id userAddress userId stream { id idAsString metadata createdAt } canEdit canDelete canGrant publishExpiration subscribeExpiration',
+                sortFields: [
+                    { value: 'id', label: 'ID' },
+                    { value: 'userAddress', label: 'User Address' },
+                    { value: 'userId', label: 'User ID' },
+                    { value: 'publishExpiration', label: 'Publish Expiration' },
+                    { value: 'subscribeExpiration', label: 'Subscribe Expiration' },
+                ],
+                defaultSort: { field: 'id', direction: 'asc' },
+                filters: [
+                    { id: 'permUserAddress', field: 'userAddress', label: 'User Address', type: 'address', placeholder: '0x...' },
+                    { id: 'permUserAddressContains', field: 'userAddress_contains', label: 'User Address Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'permUserId', field: 'userId', label: 'User ID', type: 'text', placeholder: 'User ID' },
+                    { id: 'permUserIdContains', field: 'userId_contains_nocase', label: 'User ID Contains', type: 'text', placeholder: 'user' },
+                    { id: 'permStreamId', field: 'stream', label: 'Stream ID', type: 'text', placeholder: 'Stream address/path' },
+                    { id: 'permStreamContains', field: 'stream_contains', label: 'Stream ID Contains', type: 'text', placeholder: 'stream' },
+                    { id: 'permCanEdit', field: 'canEdit', label: 'Can Edit', type: 'boolean' },
+                    { id: 'permCanDelete', field: 'canDelete', label: 'Can Delete', type: 'boolean' },
+                    { id: 'permCanGrant', field: 'canGrant', label: 'Can Grant', type: 'boolean' },
+                    { id: 'permMinPublishExp', field: 'publishExpiration_gte', label: 'Publish Expires After', type: 'datetime' },
+                    { id: 'permMaxPublishExp', field: 'publishExpiration_lte', label: 'Publish Expires Before', type: 'datetime' },
+                    { id: 'permMinSubscribeExp', field: 'subscribeExpiration_gte', label: 'Subscribe Expires After', type: 'datetime' },
+                    { id: 'permMaxSubscribeExp', field: 'subscribeExpiration_lte', label: 'Subscribe Expires Before', type: 'datetime' },
+                    { id: 'permHasPublish', field: 'publishExpiration_gt', label: 'Has Publish Permission (exp > 0)', type: 'number', placeholder: '0' },
+                    { id: 'permHasSubscribe', field: 'subscribeExpiration_gt', label: 'Has Subscribe Permission (exp > 0)', type: 'number', placeholder: '0' },
+                ],
+            },
+            // ─────────────────────────────────────────────────
+            // SPONSORSHIPS
+            // ─────────────────────────────────────────────────
+            sponsorships: {
+                label: 'Sponsorship',
+                category: 'Staking',
+                queryType: 'list',
+                singularQuery: 'sponsorship',
+                description: 'Sponsorship contracts for streams - includes staking, APY, operators and events',
+                fields: `id stream { id idAsString metadata } metadata creator totalPayoutWeiPerSec remainingWei remainingWeiUpdateTimestamp 
+                    projectedInsolvency spotAPY operatorCount minOperators maxOperators minimumStakingPeriodSeconds totalStakedWei cumulativeSponsoring isRunning
+                    stakes(first: 5) { id operator { id metadataJsonString } amountWei earningsWei }
+                    flags(first: 3) { id result target { id } flagger { id } flaggingTimestamp }
+                    slashingEvents(first: 3) { id operator { id } amount date }
+                    stakingEvents(first: 5) { id operator { id } amount date }
+                    sponsoringEvents(first: 3) { id sponsor amount date }`,
+                sortFields: [
+                    { value: 'id', label: 'ID (Address)' },
+                    { value: 'spotAPY', label: 'Spot APY' },
+                    { value: 'remainingWei', label: 'Remaining Funds' },
+                    { value: 'totalPayoutWeiPerSec', label: 'Payout Per Second' },
+                    { value: 'operatorCount', label: 'Operator Count' },
+                    { value: 'totalStakedWei', label: 'Total Staked' },
+                    { value: 'projectedInsolvency', label: 'Projected Insolvency' },
+                    { value: 'cumulativeSponsoring', label: 'Cumulative Sponsoring' },
+                    { value: 'minimumStakingPeriodSeconds', label: 'Min Staking Period' },
+                    { value: 'minOperators', label: 'Min Operators Required' },
+                    { value: 'maxOperators', label: 'Max Operators Allowed' },
+                ],
+                defaultSort: { field: 'spotAPY', direction: 'desc' },
+                filters: [
+                    { id: 'sponsorshipIdFilter', field: 'id', label: 'Sponsorship Address', type: 'address', placeholder: '0x...' },
+                    { id: 'sponsorshipIdContains', field: 'id_contains', label: 'Address Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'sponsorshipCreatorFilter', field: 'creator', label: 'Creator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'sponsorshipCreatorContains', field: 'creator_contains', label: 'Creator Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'sponsorshipStreamFilter', field: 'stream', label: 'Stream ID', type: 'text', placeholder: 'Stream address' },
+                    { id: 'sponsorshipStreamContains', field: 'stream_contains', label: 'Stream Contains', type: 'text', placeholder: 'stream' },
+                    { id: 'sponsorshipMetadataFilter', field: 'metadata_contains_nocase', label: 'Metadata Contains', type: 'text', placeholder: 'description' },
+                    { id: 'sponsorshipMinApy', field: 'spotAPY_gte', label: 'Min APY (0.1 = 10%)', type: 'number', step: '0.0001', placeholder: '0.1' },
+                    { id: 'sponsorshipMaxApy', field: 'spotAPY_lte', label: 'Max APY (0.1 = 10%)', type: 'number', step: '0.0001', placeholder: '0.5' },
+                    { id: 'sponsorshipMinOperators', field: 'operatorCount_gte', label: 'Min Operators', type: 'number', placeholder: '1' },
+                    { id: 'sponsorshipMaxOperators', field: 'operatorCount_lte', label: 'Max Operators', type: 'number', placeholder: '10' },
+                    { id: 'sponsorshipIsRunning', field: 'isRunning', label: 'Is Active', type: 'boolean' },
+                    { id: 'sponsorshipMinRemainingWei', field: 'remainingWei_gte', label: 'Min Remaining (DATA)', type: 'wei', placeholder: '10' },
+                    { id: 'sponsorshipMaxRemainingWei', field: 'remainingWei_lte', label: 'Max Remaining (DATA)', type: 'wei', placeholder: '1000000' },
+                    { id: 'sponsorshipMinTotalStaked', field: 'totalStakedWei_gte', label: 'Min Total Staked (DATA)', type: 'wei', placeholder: '1000' },
+                    { id: 'sponsorshipMaxTotalStaked', field: 'totalStakedWei_lte', label: 'Max Total Staked (DATA)', type: 'wei', placeholder: '1000000' },
+                    { id: 'sponsorshipMinCumulative', field: 'cumulativeSponsoring_gte', label: 'Min Cumulative Sponsoring (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'sponsorshipMinPayout', field: 'totalPayoutWeiPerSec_gte', label: 'Min Payout/Sec (wei)', type: 'wei', placeholder: '1000000000000000' },
+                    { id: 'sponsorshipMinInsolvency', field: 'projectedInsolvency_gte', label: 'Insolvency After (timestamp)', type: 'datetime' },
+                    { id: 'sponsorshipMaxInsolvency', field: 'projectedInsolvency_lte', label: 'Insolvency Before (timestamp)', type: 'datetime' },
+                ],
+            },
+            sponsorshipDailyBuckets: {
+                label: 'Sponsorship Daily Bucket',
+                category: 'Metrics',
+                queryType: 'list',
+                singularQuery: 'sponsorshipDailyBucket',
+                description: 'Daily performance metrics for sponsorships - APY, staking and remaining funds tracking',
+                fields: 'id sponsorship { id stream { idAsString metadata } creator isRunning totalPayoutWeiPerSec } date totalStakedWei remainingWei projectedInsolvency spotAPY operatorCount',
+                sortFields: [
+                    { value: 'date', label: 'Date' },
+                    { value: 'spotAPY', label: 'Spot APY' },
+                    { value: 'totalStakedWei', label: 'Total Staked' },
+                    { value: 'remainingWei', label: 'Remaining' },
+                    { value: 'operatorCount', label: 'Operator Count' },
+                    { value: 'projectedInsolvency', label: 'Projected Insolvency' },
+                ],
+                defaultSort: { field: 'date', direction: 'desc' },
+                filters: [
+                    { id: 'dailyBucketSponsorshipFilter', field: 'sponsorship', label: 'Sponsorship Address', type: 'address', placeholder: '0x...' },
+                    { id: 'dailyBucketSponsorshipContains', field: 'sponsorship_contains', label: 'Sponsorship Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'dailyBucketMinApy', field: 'spotAPY_gte', label: 'Min APY', type: 'number', step: '0.0001', placeholder: '0.1' },
+                    { id: 'dailyBucketMaxApy', field: 'spotAPY_lte', label: 'Max APY', type: 'number', step: '0.0001', placeholder: '0.5' },
+                    { id: 'dailyBucketMinDate', field: 'date_gte', label: 'From Date', type: 'datetime' },
+                    { id: 'dailyBucketMaxDate', field: 'date_lte', label: 'To Date', type: 'datetime' },
+                    { id: 'dailyBucketMinStaked', field: 'totalStakedWei_gte', label: 'Min Total Staked (DATA)', type: 'wei', placeholder: '1000' },
+                    { id: 'dailyBucketMaxStaked', field: 'totalStakedWei_lte', label: 'Max Total Staked (DATA)', type: 'wei', placeholder: '1000000' },
+                    { id: 'dailyBucketMinRemaining', field: 'remainingWei_gte', label: 'Min Remaining (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'dailyBucketMaxRemaining', field: 'remainingWei_lte', label: 'Max Remaining (DATA)', type: 'wei', placeholder: '100000' },
+                    { id: 'dailyBucketMinOperators', field: 'operatorCount_gte', label: 'Min Operators', type: 'number', placeholder: '1' },
+                    { id: 'dailyBucketMaxOperators', field: 'operatorCount_lte', label: 'Max Operators', type: 'number', placeholder: '10' },
+                ],
+            },
+            // ─────────────────────────────────────────────────
+            // OPERATORS
+            // ─────────────────────────────────────────────────
+            operators: {
+                label: 'Operator',
+                category: 'Staking',
+                queryType: 'list',
+                singularQuery: 'operator',
+                description: 'Network operators staking in sponsorships - includes earnings, delegations, stakes and governance',
+                fields: `id owner metadataJsonString delegatorCount valueWithoutEarnings totalStakeInSponsorshipsWei 
+                    dataTokenBalanceWei operatorTokenTotalSupplyWei exchangeRate valueUpdateTimestamp valueUpdateBlockNumber
+                    cumulativeProfitsWei cumulativeOperatorsCutWei cumulativeEarningsWei operatorsCutFraction contractVersion 
+                    slashingsCount isEligibleToVote protectionEndTimestamp latestHeartbeatTimestamp latestHeartbeatMetadata 
+                    nodes controllers
+                    stakes(first: 5) { id sponsorship { id stream { idAsString } spotAPY } amountWei earningsWei }
+                    delegations(first: 5) { id delegator { id } _valueDataWei isSelfDelegation }
+                    flagsOpened(first: 3) { id result flaggingTimestamp }
+                    flagsTargeted(first: 3) { id result flaggingTimestamp }
+                    queueEntries(first: 5) { id amount date delegator { id } }`,
+                sortFields: [
+                    { value: 'id', label: 'ID (Address)' },
+                    { value: 'valueWithoutEarnings', label: 'Total Value' },
+                    { value: 'delegatorCount', label: 'Delegator Count' },
+                    { value: 'totalStakeInSponsorshipsWei', label: 'Total Stake in Sponsorships' },
+                    { value: 'cumulativeEarningsWei', label: 'Cumulative Earnings' },
+                    { value: 'cumulativeProfitsWei', label: 'Cumulative Profits' },
+                    { value: 'cumulativeOperatorsCutWei', label: 'Cumulative Operator Cut' },
+                    { value: 'operatorsCutFraction', label: 'Operator Cut %' },
+                    { value: 'slashingsCount', label: 'Slashings Count' },
+                    { value: 'latestHeartbeatTimestamp', label: 'Last Heartbeat' },
+                    { value: 'exchangeRate', label: 'Exchange Rate' },
+                    { value: 'dataTokenBalanceWei', label: 'DATA Token Balance' },
+                    { value: 'operatorTokenTotalSupplyWei', label: 'Operator Token Supply' },
+                    { value: 'protectionEndTimestamp', label: 'Protection End' },
+                    { value: 'valueUpdateTimestamp', label: 'Value Update Time' },
+                ],
+                defaultSort: { field: 'valueWithoutEarnings', direction: 'desc' },
+                filters: [
+                    { id: 'operatorIdFilter', field: 'id_contains', label: 'Address Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'operatorIdExact', field: 'id', label: 'Operator Address (Exact)', type: 'address', placeholder: '0x...' },
+                    { id: 'operatorOwnerFilter', field: 'owner', label: 'Owner Address', type: 'address', placeholder: '0x...' },
+                    { id: 'operatorOwnerContains', field: 'owner_contains', label: 'Owner Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'operatorMetadataFilter', field: 'metadataJsonString_contains_nocase', label: 'Metadata Contains', type: 'text', placeholder: 'operator name' },
+                    { id: 'operatorMinDelegators', field: 'delegatorCount_gte', label: 'Min Delegators', type: 'number', placeholder: '5' },
+                    { id: 'operatorMaxDelegators', field: 'delegatorCount_lte', label: 'Max Delegators', type: 'number', placeholder: '100' },
+                    { id: 'operatorMinValue', field: 'valueWithoutEarnings_gte', label: 'Min Total Value (DATA)', type: 'wei', placeholder: '1000' },
+                    { id: 'operatorMaxValue', field: 'valueWithoutEarnings_lte', label: 'Max Total Value (DATA)', type: 'wei', placeholder: '1000000' },
+                    { id: 'operatorMinStake', field: 'totalStakeInSponsorshipsWei_gte', label: 'Min Stake in Sponsorships (DATA)', type: 'wei', placeholder: '500' },
+                    { id: 'operatorMaxStake', field: 'totalStakeInSponsorshipsWei_lte', label: 'Max Stake in Sponsorships (DATA)', type: 'wei', placeholder: '100000' },
+                    { id: 'operatorMinEarnings', field: 'cumulativeEarningsWei_gte', label: 'Min Cumulative Earnings (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'operatorMinProfits', field: 'cumulativeProfitsWei_gte', label: 'Min Cumulative Profits (DATA)', type: 'wei', placeholder: '10' },
+                    { id: 'operatorIsEligibleToVote', field: 'isEligibleToVote', label: 'Eligible to Vote', type: 'boolean' },
+                    { id: 'operatorMinCut', field: 'operatorsCutFraction_gte', label: 'Min Operator Cut (0-1)', type: 'fraction', placeholder: '0.05' },
+                    { id: 'operatorMaxCut', field: 'operatorsCutFraction_lte', label: 'Max Operator Cut (0-1)', type: 'fraction', placeholder: '0.20' },
+                    { id: 'operatorMinSlashings', field: 'slashingsCount_gte', label: 'Min Slashings', type: 'number', placeholder: '0' },
+                    { id: 'operatorMaxSlashings', field: 'slashingsCount_lte', label: 'Max Slashings', type: 'number', placeholder: '5' },
+                    { id: 'operatorMinHeartbeat', field: 'latestHeartbeatTimestamp_gte', label: 'Last Heartbeat After', type: 'datetime' },
+                    { id: 'operatorContractVersion', field: 'contractVersion', label: 'Contract Version', type: 'number', placeholder: '1' },
+                ],
+            },
+            operatorDailyBuckets: {
+                label: 'Operator Daily Bucket',
+                category: 'Metrics',
+                queryType: 'list',
+                singularQuery: 'operatorDailyBucket',
+                description: 'Daily performance metrics for operators - profits, losses, delegations and earnings',
+                fields: 'id operator { id owner metadataJsonString valueWithoutEarnings delegatorCount operatorsCutFraction } date valueWithoutEarnings totalStakeInSponsorshipsWei dataTokenBalanceWei delegatorCountAtStart delegatorCountChange totalDelegatedWei totalUndelegatedWei profitsWei lossesWei operatorsCutWei cumulativeEarningsWei',
+                sortFields: [
+                    { value: 'date', label: 'Date' },
+                    { value: 'profitsWei', label: 'Profits' },
+                    { value: 'lossesWei', label: 'Losses' },
+                    { value: 'totalDelegatedWei', label: 'Total Delegated' },
+                    { value: 'totalUndelegatedWei', label: 'Total Undelegated' },
+                    { value: 'valueWithoutEarnings', label: 'Value' },
+                    { value: 'totalStakeInSponsorshipsWei', label: 'Stake in Sponsorships' },
+                    { value: 'dataTokenBalanceWei', label: 'DATA Balance' },
+                    { value: 'delegatorCountAtStart', label: 'Delegators at Start' },
+                    { value: 'delegatorCountChange', label: 'Delegator Change' },
+                    { value: 'operatorsCutWei', label: 'Operator Cut' },
+                    { value: 'cumulativeEarningsWei', label: 'Cumulative Earnings' },
+                ],
+                defaultSort: { field: 'date', direction: 'desc' },
+                filters: [
+                    { id: 'operatorDailyOperatorFilter', field: 'operator', label: 'Operator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'operatorDailyOperatorContains', field: 'operator_contains', label: 'Operator Address Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'operatorDailyMinDate', field: 'date_gte', label: 'From Date', type: 'datetime' },
+                    { id: 'operatorDailyMaxDate', field: 'date_lte', label: 'To Date', type: 'datetime' },
+                    { id: 'operatorDailyMinProfits', field: 'profitsWei_gte', label: 'Min Profits (DATA)', type: 'wei', placeholder: '1' },
+                    { id: 'operatorDailyMaxProfits', field: 'profitsWei_lte', label: 'Max Profits (DATA)', type: 'wei', placeholder: '10000' },
+                    { id: 'operatorDailyMinLosses', field: 'lossesWei_gte', label: 'Min Losses (DATA)', type: 'wei', placeholder: '0' },
+                    { id: 'operatorDailyMaxLosses', field: 'lossesWei_lte', label: 'Max Losses (DATA)', type: 'wei', placeholder: '1000' },
+                    { id: 'operatorDailyMinDelegated', field: 'totalDelegatedWei_gte', label: 'Min Delegated (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'operatorDailyMinUndelegated', field: 'totalUndelegatedWei_gte', label: 'Min Undelegated (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'operatorDailyMinValue', field: 'valueWithoutEarnings_gte', label: 'Min Value (DATA)', type: 'wei', placeholder: '1000' },
+                    { id: 'operatorDailyMinDelegatorChange', field: 'delegatorCountChange_gte', label: 'Min Delegator Change', type: 'number', placeholder: '0' },
+                    { id: 'operatorDailyMaxDelegatorChange', field: 'delegatorCountChange_lte', label: 'Max Delegator Change', type: 'number', placeholder: '0' },
+                ],
+            },
+            // ─────────────────────────────────────────────────
+            // STAKES & DELEGATIONS
+            // ─────────────────────────────────────────────────
+            stakes: {
+                label: 'Stake',
+                category: 'Staking',
+                queryType: 'list',
+                singularQuery: 'stake',
+                description: 'Operator stake positions in sponsorships with earnings and lock status',
+                fields: 'id sponsorship { id stream { idAsString metadata } spotAPY totalStakedWei operatorCount isRunning remainingWei projectedInsolvency } operator { id owner metadataJsonString operatorsCutFraction valueWithoutEarnings delegatorCount } amountWei lockedWei minimumStakeWei earningsWei updateTimestamp joinTimestamp',
+                sortFields: [
+                    { value: 'id', label: 'ID' },
+                    { value: 'amountWei', label: 'Amount Staked' },
+                    { value: 'lockedWei', label: 'Locked Amount' },
+                    { value: 'earningsWei', label: 'Earnings' },
+                    { value: 'minimumStakeWei', label: 'Minimum Stake' },
+                    { value: 'joinTimestamp', label: 'Join Date' },
+                    { value: 'updateTimestamp', label: 'Last Update' },
+                ],
+                defaultSort: { field: 'amountWei', direction: 'desc' },
+                filters: [
+                    { id: 'stakeOperatorFilter', field: 'operator', label: 'Operator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'stakeOperatorContains', field: 'operator_contains', label: 'Operator Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'stakeSponsorshipFilter', field: 'sponsorship', label: 'Sponsorship Address', type: 'address', placeholder: '0x...' },
+                    { id: 'stakeSponsorshipContains', field: 'sponsorship_contains', label: 'Sponsorship Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'stakeMinAmountWei', field: 'amountWei_gte', label: 'Min Amount (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'stakeMaxAmountWei', field: 'amountWei_lte', label: 'Max Amount (DATA)', type: 'wei', placeholder: '100000' },
+                    { id: 'stakeMinLockedWei', field: 'lockedWei_gte', label: 'Min Locked (DATA)', type: 'wei', placeholder: '0' },
+                    { id: 'stakeMinEarnings', field: 'earningsWei_gte', label: 'Min Earnings (DATA)', type: 'wei', placeholder: '1' },
+                    { id: 'stakeMaxEarnings', field: 'earningsWei_lte', label: 'Max Earnings (DATA)', type: 'wei', placeholder: '10000' },
+                    { id: 'stakeMinJoinDate', field: 'joinTimestamp_gte', label: 'Joined After', type: 'datetime' },
+                    { id: 'stakeMaxJoinDate', field: 'joinTimestamp_lte', label: 'Joined Before', type: 'datetime' },
+                    { id: 'stakeMinUpdateDate', field: 'updateTimestamp_gte', label: 'Updated After', type: 'datetime' },
+                ],
+            },
+            delegations: {
+                label: 'Delegation',
+                category: 'Staking',
+                queryType: 'list',
+                singularQuery: 'delegation',
+                description: 'Delegator stake positions with operators - includes value, timestamps and self-delegation status',
+                fields: 'id delegator { id numberOfDelegations totalValueDataWei cumulativeEarningsWei } operator { id owner metadataJsonString operatorsCutFraction valueWithoutEarnings delegatorCount totalStakeInSponsorshipsWei cumulativeEarningsWei } operatorTokenBalanceWei _valueDataWei latestDelegationTimestamp earliestUndelegationTimestamp isSelfDelegation',
+                sortFields: [
+                    { value: 'id', label: 'ID' },
+                    { value: '_valueDataWei', label: 'Value Delegated' },
+                    { value: 'operatorTokenBalanceWei', label: 'Operator Token Balance' },
+                    { value: 'latestDelegationTimestamp', label: 'Delegation Date' },
+                    { value: 'earliestUndelegationTimestamp', label: 'Undelegation Date' },
+                ],
+                defaultSort: { field: '_valueDataWei', direction: 'desc' },
+                filters: [
+                    { id: 'delegationDelegatorFilter', field: 'delegator', label: 'Delegator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'delegationDelegatorContains', field: 'delegator_contains', label: 'Delegator Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'delegationOperatorFilter', field: 'operator', label: 'Operator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'delegationOperatorContains', field: 'operator_contains', label: 'Operator Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'delegationMinValueWei', field: '_valueDataWei_gte', label: 'Min Value (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'delegationMaxValueWei', field: '_valueDataWei_lte', label: 'Max Value (DATA)', type: 'wei', placeholder: '100000' },
+                    { id: 'delegationMinTokenBalance', field: 'operatorTokenBalanceWei_gte', label: 'Min Token Balance (wei)', type: 'wei', placeholder: '1000000000000000000' },
+                    { id: 'delegationIsSelf', field: 'isSelfDelegation', label: 'Self Delegation', type: 'boolean' },
+                    { id: 'delegationMinDelegationDate', field: 'latestDelegationTimestamp_gte', label: 'Delegated After', type: 'datetime' },
+                    { id: 'delegationMaxDelegationDate', field: 'latestDelegationTimestamp_lte', label: 'Delegated Before', type: 'datetime' },
+                    { id: 'delegationMinUndelegationDate', field: 'earliestUndelegationTimestamp_gte', label: 'Undelegation After', type: 'datetime' },
+                    { id: 'delegationHasUndelegation', field: 'earliestUndelegationTimestamp_gt', label: 'Has Undelegation (timestamp > 0)', type: 'number', placeholder: '0' },
+                ],
+            },
+            delegators: {
+                label: 'Delegator',
+                category: 'Staking',
+                queryType: 'list',
+                singularQuery: 'delegator',
+                description: 'Accounts that delegate to operators - with portfolio summary and earnings',
+                fields: `id numberOfDelegations totalValueDataWei cumulativeEarningsWei 
+                    delegations(first: 10) { id operator { id owner metadataJsonString operatorsCutFraction } _valueDataWei isSelfDelegation latestDelegationTimestamp } 
+                    queueEntries(first: 5) { id operator { id metadataJsonString } amount date }`,
+                sortFields: [
+                    { value: 'id', label: 'ID (Address)' },
+                    { value: 'numberOfDelegations', label: 'Number of Delegations' },
+                    { value: 'totalValueDataWei', label: 'Total Value' },
+                    { value: 'cumulativeEarningsWei', label: 'Cumulative Earnings' },
+                ],
+                defaultSort: { field: 'totalValueDataWei', direction: 'desc' },
+                filters: [
+                    { id: 'delegatorIdFilter', field: 'id', label: 'Delegator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'delegatorIdContains', field: 'id_contains', label: 'Address Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'delegatorMinDelegations', field: 'numberOfDelegations_gte', label: 'Min Delegations', type: 'number', placeholder: '1' },
+                    { id: 'delegatorMaxDelegations', field: 'numberOfDelegations_lte', label: 'Max Delegations', type: 'number', placeholder: '10' },
+                    { id: 'delegatorMinValue', field: 'totalValueDataWei_gte', label: 'Min Total Value (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'delegatorMaxValue', field: 'totalValueDataWei_lte', label: 'Max Total Value (DATA)', type: 'wei', placeholder: '1000000' },
+                    { id: 'delegatorMinEarnings', field: 'cumulativeEarningsWei_gte', label: 'Min Cumulative Earnings (DATA)', type: 'wei', placeholder: '1' },
+                    { id: 'delegatorHasEarnings', field: 'cumulativeEarningsWei_gt', label: 'Has Earnings (>0)', type: 'number', placeholder: '0' },
+                ],
+            },
+            delegatorDailyBuckets: {
+                label: 'Delegator Daily Bucket',
+                category: 'Metrics',
+                queryType: 'list',
+                singularQuery: 'delegatorDailyBucket',
+                description: 'Daily portfolio metrics for delegators - value, operator count and earnings',
+                fields: 'id delegator { id numberOfDelegations totalValueDataWei cumulativeEarningsWei } date totalValueDataWei operatorCount cumulativeEarningsWei',
+                sortFields: [
+                    { value: 'date', label: 'Date' },
+                    { value: 'totalValueDataWei', label: 'Total Value' },
+                    { value: 'operatorCount', label: 'Operator Count' },
+                    { value: 'cumulativeEarningsWei', label: 'Cumulative Earnings' },
+                ],
+                defaultSort: { field: 'date', direction: 'desc' },
+                filters: [
+                    { id: 'delegatorDailyDelegatorFilter', field: 'delegator', label: 'Delegator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'delegatorDailyDelegatorContains', field: 'delegator_contains', label: 'Delegator Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'delegatorDailyMinDate', field: 'date_gte', label: 'From Date', type: 'datetime' },
+                    { id: 'delegatorDailyMaxDate', field: 'date_lte', label: 'To Date', type: 'datetime' },
+                    { id: 'delegatorDailyMinValue', field: 'totalValueDataWei_gte', label: 'Min Value (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'delegatorDailyMaxValue', field: 'totalValueDataWei_lte', label: 'Max Value (DATA)', type: 'wei', placeholder: '1000000' },
+                    { id: 'delegatorDailyMinOperators', field: 'operatorCount_gte', label: 'Min Operators', type: 'number', placeholder: '1' },
+                    { id: 'delegatorDailyMaxOperators', field: 'operatorCount_lte', label: 'Max Operators', type: 'number', placeholder: '10' },
+                    { id: 'delegatorDailyMinEarnings', field: 'cumulativeEarningsWei_gte', label: 'Min Cumulative Earnings (DATA)', type: 'wei', placeholder: '1' },
+                ],
+            },
+            pastDelegationCounts: {
+                label: 'Past Delegation Count',
+                category: 'Metrics',
+                queryType: 'list',
+                singularQuery: 'pastDelegationCount',
+                description: 'Historical delegation count snapshots - useful for tracking delegation trends',
+                fields: 'id count',
+                sortFields: [
+                    { value: 'id', label: 'ID' },
+                    { value: 'count', label: 'Count' },
+                ],
+                defaultSort: { field: 'count', direction: 'desc' },
+                filters: [
+                    { id: 'pastDelegationIdFilter', field: 'id_contains', label: 'ID Contains', type: 'text', placeholder: 'ID pattern' },
+                    { id: 'pastDelegationIdExact', field: 'id', label: 'ID (Exact)', type: 'text', placeholder: 'exact-id' },
+                    { id: 'pastDelegationMinCount', field: 'count_gte', label: 'Min Count', type: 'number', placeholder: '1' },
+                    { id: 'pastDelegationMaxCount', field: 'count_lte', label: 'Max Count', type: 'number', placeholder: '100' },
+                ],
+            },
+            // ─────────────────────────────────────────────────
+            // EVENTS
+            // ─────────────────────────────────────────────────
+            stakingEvents: {
+                label: 'Staking Event',
+                category: 'Events',
+                queryType: 'list',
+                singularQuery: 'stakingEvent',
+                description: 'Stake/Unstake events on sponsorships - positive amounts are stakes, negative are unstakes',
+                fields: `id operator { id owner metadataJsonString operatorsCutFraction valueWithoutEarnings delegatorCount totalStakeInSponsorshipsWei } 
+                    sponsorship { id stream { idAsString metadata } spotAPY totalStakedWei remainingWei operatorCount isRunning creator } 
+                    amount date`,
+                sortFields: [
+                    { value: 'date', label: 'Event Date' },
+                    { value: 'amount', label: 'Amount' },
+                    { value: 'id', label: 'ID' },
+                ],
+                defaultSort: { field: 'date', direction: 'desc' },
+                filters: [
+                    { id: 'stakingEventOperatorFilter', field: 'operator', label: 'Operator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'stakingEventOperatorContains', field: 'operator_contains', label: 'Operator Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'stakingEventSponsorshipFilter', field: 'sponsorship', label: 'Sponsorship Address', type: 'address', placeholder: '0x...' },
+                    { id: 'stakingEventSponsorshipContains', field: 'sponsorship_contains', label: 'Sponsorship Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'stakingEventMinAmount', field: 'amount_gte', label: 'Min Amount (DATA) - positive=stake', type: 'wei', placeholder: '100' },
+                    { id: 'stakingEventMaxAmount', field: 'amount_lte', label: 'Max Amount (DATA) - negative=unstake', type: 'wei', placeholder: '-100' },
+                    { id: 'stakingEventPositiveOnly', field: 'amount_gt', label: 'Stakes Only (amount > 0)', type: 'number', placeholder: '0' },
+                    { id: 'stakingEventNegativeOnly', field: 'amount_lt', label: 'Unstakes Only (amount < 0)', type: 'number', placeholder: '0' },
+                    { id: 'stakingEventMinDate', field: 'date_gte', label: 'From Date', type: 'datetime' },
+                    { id: 'stakingEventMaxDate', field: 'date_lte', label: 'To Date', type: 'datetime' },
+                ],
+            },
+            sponsoringEvents: {
+                label: 'Sponsoring Event',
+                category: 'Events',
+                queryType: 'list',
+                singularQuery: 'sponsoringEvent',
+                description: 'Sponsorship funding events - when sponsors add funds to sponsorships',
+                fields: `id sponsor 
+                    sponsorship { id stream { idAsString metadata } spotAPY totalStakedWei remainingWei operatorCount isRunning creator totalPayoutWeiPerSec projectedInsolvency } 
+                    amount date`,
+                sortFields: [
+                    { value: 'date', label: 'Event Date' },
+                    { value: 'amount', label: 'Amount' },
+                    { value: 'sponsor', label: 'Sponsor Address' },
+                    { value: 'id', label: 'ID' },
+                ],
+                defaultSort: { field: 'date', direction: 'desc' },
+                filters: [
+                    { id: 'sponsoringEventSponsorFilter', field: 'sponsor', label: 'Sponsor Address', type: 'address', placeholder: '0x...' },
+                    { id: 'sponsoringEventSponsorContains', field: 'sponsor_contains', label: 'Sponsor Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'sponsoringEventSponsorshipFilter', field: 'sponsorship', label: 'Sponsorship Address', type: 'address', placeholder: '0x...' },
+                    { id: 'sponsoringEventSponsorshipContains', field: 'sponsorship_contains', label: 'Sponsorship Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'sponsoringEventMinAmount', field: 'amount_gte', label: 'Min Amount (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'sponsoringEventMaxAmount', field: 'amount_lte', label: 'Max Amount (DATA)', type: 'wei', placeholder: '100000' },
+                    { id: 'sponsoringEventMinDate', field: 'date_gte', label: 'From Date', type: 'datetime' },
+                    { id: 'sponsoringEventMaxDate', field: 'date_lte', label: 'To Date', type: 'datetime' },
+                ],
+            },
+            slashingEvents: {
+                label: 'Slashing Event',
+                category: 'Events',
+                queryType: 'list',
+                singularQuery: 'slashingEvent',
+                description: 'Operator penalty/slashing events - funds lost due to misconduct or failed flag disputes',
+                fields: `id 
+                    operator { id owner metadataJsonString valueWithoutEarnings slashingsCount delegatorCount totalStakeInSponsorshipsWei operatorsCutFraction } 
+                    sponsorship { id stream { idAsString metadata } spotAPY totalStakedWei remainingWei operatorCount isRunning creator } 
+                    amount date`,
+                sortFields: [
+                    { value: 'date', label: 'Event Date' },
+                    { value: 'amount', label: 'Amount Slashed' },
+                    { value: 'id', label: 'ID' },
+                ],
+                defaultSort: { field: 'date', direction: 'desc' },
+                filters: [
+                    { id: 'slashingEventOperatorFilter', field: 'operator', label: 'Operator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'slashingEventOperatorContains', field: 'operator_contains', label: 'Operator Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'slashingEventSponsorshipFilter', field: 'sponsorship', label: 'Sponsorship Address', type: 'address', placeholder: '0x...' },
+                    { id: 'slashingEventSponsorshipContains', field: 'sponsorship_contains', label: 'Sponsorship Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'slashingEventMinAmount', field: 'amount_gte', label: 'Min Amount Slashed (DATA)', type: 'wei', placeholder: '1' },
+                    { id: 'slashingEventMaxAmount', field: 'amount_lte', label: 'Max Amount Slashed (DATA)', type: 'wei', placeholder: '100000' },
+                    { id: 'slashingEventMinDate', field: 'date_gte', label: 'From Date', type: 'datetime' },
+                    { id: 'slashingEventMaxDate', field: 'date_lte', label: 'To Date', type: 'datetime' },
+                ],
+            },
+            // ─────────────────────────────────────────────────
+            // FLAGS & VOTES (Governance)
+            // ─────────────────────────────────────────────────
+            flags: {
+                label: 'Flag',
+                category: 'Governance',
+                queryType: 'list',
+                singularQuery: 'flag',
+                description: 'Operator flagging/dispute events - governance mechanism for reporting misconduct',
+                fields: `id lastFlagIndex 
+                    sponsorship { id stream { idAsString metadata } creator spotAPY totalStakedWei remainingWei operatorCount } 
+                    target { id owner metadataJsonString valueWithoutEarnings slashingsCount delegatorCount } 
+                    flagger { id owner metadataJsonString valueWithoutEarnings } 
+                    flaggingTimestamp result flagResolutionTimestamp votesForKick votesAgainstKick reviewerCount 
+                    targetStakeAtRiskWei metadata voteStartTimestamp voteEndTimestamp protectionEndTimestamp 
+                    votes(first: 10) { id voter { id metadataJsonString } votedKick voterWeight timestamp } 
+                    reviewers(first: 10) { id }`,
+                sortFields: [
+                    { value: 'flaggingTimestamp', label: 'Flagging Date' },
+                    { value: 'flagResolutionTimestamp', label: 'Resolution Date' },
+                    { value: 'votesForKick', label: 'Votes For Kick' },
+                    { value: 'votesAgainstKick', label: 'Votes Against Kick' },
+                    { value: 'targetStakeAtRiskWei', label: 'Stake at Risk' },
+                    { value: 'reviewerCount', label: 'Reviewer Count' },
+                    { value: 'voteStartTimestamp', label: 'Vote Start' },
+                    { value: 'voteEndTimestamp', label: 'Vote End' },
+                    { value: 'protectionEndTimestamp', label: 'Protection End' },
+                    { value: 'lastFlagIndex', label: 'Flag Index' },
+                ],
+                defaultSort: { field: 'flaggingTimestamp', direction: 'desc' },
+                filters: [
+                    { id: 'flagTargetFilter', field: 'target', label: 'Target Operator', type: 'address', placeholder: '0x...' },
+                    { id: 'flagTargetContains', field: 'target_contains', label: 'Target Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'flagFlaggerFilter', field: 'flagger', label: 'Flagger Operator', type: 'address', placeholder: '0x...' },
+                    { id: 'flagFlaggerContains', field: 'flagger_contains', label: 'Flagger Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'flagSponsorshipFilter', field: 'sponsorship', label: 'Sponsorship Address', type: 'address', placeholder: '0x...' },
+                    { id: 'flagSponsorshipContains', field: 'sponsorship_contains', label: 'Sponsorship Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'flagResult', field: 'result', label: 'Result (kicked/not-kicked/waiting/voting)', type: 'text', placeholder: 'kicked' },
+                    { id: 'flagResultNotNull', field: 'result_not', label: 'Has Result (resolved)', type: 'text', placeholder: '' },
+                    { id: 'flagMinStakeAtRisk', field: 'targetStakeAtRiskWei_gte', label: 'Min Stake at Risk (DATA)', type: 'wei', placeholder: '1000' },
+                    { id: 'flagMaxStakeAtRisk', field: 'targetStakeAtRiskWei_lte', label: 'Max Stake at Risk (DATA)', type: 'wei', placeholder: '100000' },
+                    { id: 'flagMinDate', field: 'flaggingTimestamp_gte', label: 'Flagged After', type: 'datetime' },
+                    { id: 'flagMaxDate', field: 'flaggingTimestamp_lte', label: 'Flagged Before', type: 'datetime' },
+                    { id: 'flagMinResolution', field: 'flagResolutionTimestamp_gte', label: 'Resolved After', type: 'datetime' },
+                    { id: 'flagMaxResolution', field: 'flagResolutionTimestamp_lte', label: 'Resolved Before', type: 'datetime' },
+                    { id: 'flagMinVotesFor', field: 'votesForKick_gte', label: 'Min Votes For Kick', type: 'number', placeholder: '1' },
+                    { id: 'flagMinVotesAgainst', field: 'votesAgainstKick_gte', label: 'Min Votes Against Kick', type: 'number', placeholder: '1' },
+                    { id: 'flagMinReviewers', field: 'reviewerCount_gte', label: 'Min Reviewers', type: 'number', placeholder: '1' },
+                    { id: 'flagVoteStartAfter', field: 'voteStartTimestamp_gte', label: 'Vote Started After', type: 'datetime' },
+                    { id: 'flagVoteEndBefore', field: 'voteEndTimestamp_lte', label: 'Vote Ends Before', type: 'datetime' },
+                ],
+            },
+            votes: {
+                label: 'Vote',
+                category: 'Governance',
+                queryType: 'list',
+                singularQuery: 'vote',
+                description: 'Individual votes cast on flag disputes - governance participation tracking',
+                fields: `id 
+                    flag { id target { id owner metadataJsonString } flagger { id owner metadataJsonString } sponsorship { id stream { idAsString } creator } result flaggingTimestamp flagResolutionTimestamp votesForKick votesAgainstKick targetStakeAtRiskWei } 
+                    voter { id owner metadataJsonString valueWithoutEarnings delegatorCount totalStakeInSponsorshipsWei isEligibleToVote } 
+                    voterWeight timestamp votedKick`,
+                sortFields: [
+                    { value: 'timestamp', label: 'Vote Date' },
+                    { value: 'voterWeight', label: 'Voter Weight' },
+                    { value: 'votedKick', label: 'Vote Direction' },
+                    { value: 'id', label: 'ID' },
+                ],
+                defaultSort: { field: 'timestamp', direction: 'desc' },
+                filters: [
+                    { id: 'voteVoterFilter', field: 'voter', label: 'Voter Operator', type: 'address', placeholder: '0x...' },
+                    { id: 'voteVoterContains', field: 'voter_contains', label: 'Voter Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'voteFlagFilter', field: 'flag', label: 'Flag ID', type: 'text', placeholder: 'Flag ID' },
+                    { id: 'voteFlagContains', field: 'flag_contains', label: 'Flag ID Contains', type: 'text', placeholder: 'flag' },
+                    { id: 'voteVotedKick', field: 'votedKick', label: 'Voted to Kick', type: 'boolean' },
+                    { id: 'voteMinWeight', field: 'voterWeight_gte', label: 'Min Voter Weight (DATA)', type: 'wei', placeholder: '1000' },
+                    { id: 'voteMaxWeight', field: 'voterWeight_lte', label: 'Max Voter Weight (DATA)', type: 'wei', placeholder: '1000000' },
+                    { id: 'voteMinDate', field: 'timestamp_gte', label: 'Voted After', type: 'datetime' },
+                    { id: 'voteMaxDate', field: 'timestamp_lte', label: 'Voted Before', type: 'datetime' },
+                ],
+            },
+            // ─────────────────────────────────────────────────
+            // QUEUE, NODES & NETWORK
+            // ─────────────────────────────────────────────────
+            queueEntries: {
+                label: 'Queue Entry',
+                category: 'Staking',
+                queryType: 'list',
+                singularQuery: 'queueEntry',
+                description: 'Pending undelegation queue entries - funds waiting to be withdrawn from operators',
+                fields: `id 
+                    operator { id owner metadataJsonString valueWithoutEarnings delegatorCount totalStakeInSponsorshipsWei operatorsCutFraction cumulativeEarningsWei } 
+                    delegator { id totalValueDataWei numberOfDelegations cumulativeEarningsWei } 
+                    amount date`,
+                sortFields: [
+                    { value: 'date', label: 'Queue Date' },
+                    { value: 'amount', label: 'Amount' },
+                    { value: 'id', label: 'ID' },
+                ],
+                defaultSort: { field: 'date', direction: 'desc' },
+                filters: [
+                    { id: 'queueOperatorFilter', field: 'operator', label: 'Operator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'queueOperatorContains', field: 'operator_contains', label: 'Operator Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'queueDelegatorFilter', field: 'delegator', label: 'Delegator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'queueDelegatorContains', field: 'delegator_contains', label: 'Delegator Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'queueMinAmount', field: 'amount_gte', label: 'Min Amount (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'queueMaxAmount', field: 'amount_lte', label: 'Max Amount (DATA)', type: 'wei', placeholder: '100000' },
+                    { id: 'queueMinDate', field: 'date_gte', label: 'Queued After', type: 'datetime' },
+                    { id: 'queueMaxDate', field: 'date_lte', label: 'Queued Before', type: 'datetime' },
+                    { id: 'queueIdContains', field: 'id_contains', label: 'Queue ID Contains', type: 'text', placeholder: 'id pattern' },
+                ],
+            },
+            nodes: {
+                label: 'Node',
+                category: 'Network',
+                queryType: 'list',
+                singularQuery: 'node',
+                description: 'Storage/broker nodes on the network - includes stored streams and activity tracking',
+                fields: 'id metadata lastSeen createdAt storedStreams(first: 15) { id stream { id idAsString metadata } }',
+                sortFields: [
+                    { value: 'id', label: 'ID (Address)' },
+                    { value: 'lastSeen', label: 'Last Seen' },
+                    { value: 'createdAt', label: 'Created At' },
+                ],
+                defaultSort: { field: 'lastSeen', direction: 'desc' },
+                filters: [
+                    { id: 'nodeIdFilter', field: 'id_contains', label: 'Node Address Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'nodeIdExact', field: 'id', label: 'Node Address (Exact)', type: 'address', placeholder: '0x...' },
+                    { id: 'nodeMetadataFilter', field: 'metadata_contains_nocase', label: 'Metadata Contains', type: 'text', placeholder: 'version info' },
+                    { id: 'nodeMetadataNotEmpty', field: 'metadata_not', label: 'Has Metadata (not empty)', type: 'text', placeholder: '' },
+                    { id: 'nodeMinLastSeenDate', field: 'lastSeen_gte', label: 'Last Seen After', type: 'datetime' },
+                    { id: 'nodeMaxLastSeenDate', field: 'lastSeen_lte', label: 'Last Seen Before', type: 'datetime' },
+                    { id: 'nodeMinCreatedAt', field: 'createdAt_gte', label: 'Created After', type: 'datetime' },
+                    { id: 'nodeMaxCreatedAt', field: 'createdAt_lte', label: 'Created Before', type: 'datetime' },
+                    { id: 'nodeActiveRecently', field: 'lastSeen_gt', label: 'Active Since (timestamp)', type: 'number', placeholder: 'Unix timestamp' },
+                ],
+            },
+            networks: {
+                label: 'Networks',
+                category: 'Network',
+                queryType: 'list',
+                singularQuery: 'network',
+                description: 'Network configuration and global statistics - includes staking parameters and governance settings',
+                fields: `id totalStake totalDelegated totalUndelegated sponsorshipsCount fundedSponsorshipsCount operatorsCount eligibleVotersCount 
+                    slashingFraction earlyLeaverPenaltyWei minimumDelegationWei minimumSelfDelegationFraction minimumDelegationSeconds minimumStakeWei 
+                    maxPenaltyPeriodSeconds maxQueueSeconds maxAllowedEarningsFraction fishermanRewardFraction protocolFeeFraction protocolFeeBeneficiary 
+                    minEligibleVoterAge minEligibleVoterFractionOfAllStake flagReviewerCount flagReviewerRewardWei flaggerRewardWei 
+                    reviewPeriodSeconds votingPeriodSeconds flagProtectionSeconds`,
+                sortFields: [
+                    { value: 'id', label: 'ID' },
+                    { value: 'totalStake', label: 'Total Stake' },
+                    { value: 'totalDelegated', label: 'Total Delegated' },
+                    { value: 'operatorsCount', label: 'Operators Count' },
+                    { value: 'sponsorshipsCount', label: 'Sponsorships Count' },
+                    { value: 'fundedSponsorshipsCount', label: 'Funded Sponsorships' },
+                    { value: 'eligibleVotersCount', label: 'Eligible Voters' },
+                ],
+                defaultSort: { field: 'id', direction: 'asc' },
+                filters: [
+                    { id: 'networksIdFilter', field: 'id_contains', label: 'Network ID Contains', type: 'text', placeholder: 'streamr' },
+                    { id: 'networksIdExact', field: 'id', label: 'Network ID (Exact)', type: 'text', placeholder: 'streamr' },
+                    { id: 'networksMinStake', field: 'totalStake_gte', label: 'Min Total Stake (DATA)', type: 'wei', placeholder: '1000000' },
+                    { id: 'networksMinOperators', field: 'operatorsCount_gte', label: 'Min Operators', type: 'number', placeholder: '10' },
+                    { id: 'networksMinSponsorships', field: 'sponsorshipsCount_gte', label: 'Min Sponsorships', type: 'number', placeholder: '5' },
+                ],
+            },
+            network: {
+                label: 'Network (Single)',
+                category: 'Network',
+                queryType: 'single',
+                singularQuery: 'network',
+                description: 'Complete global network configuration and statistics',
+                fields: `id 
+                    totalStake totalDelegated totalUndelegated 
+                    sponsorshipsCount fundedSponsorshipsCount operatorsCount eligibleVotersCount 
+                    slashingFraction earlyLeaverPenaltyWei 
+                    minimumDelegationWei minimumSelfDelegationFraction minimumDelegationSeconds minimumStakeWei
+                    maxPenaltyPeriodSeconds maxQueueSeconds maxAllowedEarningsFraction 
+                    fishermanRewardFraction protocolFeeFraction protocolFeeBeneficiary 
+                    minEligibleVoterAge minEligibleVoterFractionOfAllStake 
+                    flagReviewerCount flagReviewerRewardWei flaggerRewardWei flagReviewerSelectionIterations flagStakeWei 
+                    reviewPeriodSeconds votingPeriodSeconds flagProtectionSeconds 
+                    randomOracle trustedForwarder sponsorshipFactory operatorFactory voterRegistry 
+                    operatorContractOnlyJoinPolicy streamRegistryAddress`,
+                sortFields: [],
+                defaultSort: { field: 'id', direction: 'asc' },
+                filters: [
+                    { id: 'networkIdFilter', field: 'id', label: 'Network ID', type: 'text', placeholder: 'streamr', defaultValue: 'streamr' },
+                ],
+                singleIdRequired: true,
+            },
+            // ─────────────────────────────────────────────────
+            // PROJECTS (Marketplace)
+            // ─────────────────────────────────────────────────
+            projects: {
+                label: 'Project',
+                category: 'Marketplace',
+                queryType: 'list',
+                singularQuery: 'project',
+                description: 'Marketplace projects with subscriptions, permissions and payment details',
+                fields: `id domainIds metadata isDataUnion createdAt updatedAt score stakedWei counter minimumSubscriptionSeconds 
+                    streams(first: 5) { id idAsString metadata } 
+                    permissions(first: 5) { id userAddress canBuy canEdit canDelete canGrant } 
+                    paymentDetails(first: 3) { id domainId beneficiary pricingTokenAddress pricePerSecond } 
+                    subscriptions(first: 5) { id userAddress endTimestamp } 
+                    purchases(first: 5) { id subscriber price purchasedAt }`,
+                sortFields: [
+                    { value: 'id', label: 'ID' },
+                    { value: 'createdAt', label: 'Created At' },
+                    { value: 'updatedAt', label: 'Updated At' },
+                    { value: 'score', label: 'Score' },
+                    { value: 'stakedWei', label: 'Staked' },
+                    { value: 'minimumSubscriptionSeconds', label: 'Min Subscription Duration' },
+                    { value: 'counter', label: 'Counter' },
+                ],
+                defaultSort: { field: 'score', direction: 'desc' },
+                filters: [
+                    { id: 'projectIdFilter', field: 'id_contains', label: 'Project ID Contains', type: 'text', placeholder: 'project-id' },
+                    { id: 'projectIdExact', field: 'id', label: 'Project ID (Exact)', type: 'text', placeholder: '0x...-project-id' },
+                    { id: 'projectMetadata', field: 'metadata_contains_nocase', label: 'Metadata Contains', type: 'text', placeholder: 'search term' },
+                    { id: 'projectIsDataUnion', field: 'isDataUnion', label: 'Is Data Union', type: 'boolean' },
+                    { id: 'projectMinScore', field: 'score_gte', label: 'Min Score', type: 'number', placeholder: '0' },
+                    { id: 'projectMaxScore', field: 'score_lte', label: 'Max Score', type: 'number', placeholder: '1000' },
+                    { id: 'projectMinStaked', field: 'stakedWei_gte', label: 'Min Staked (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'projectMaxStaked', field: 'stakedWei_lte', label: 'Max Staked (DATA)', type: 'wei', placeholder: '100000' },
+                    { id: 'projectMinCreatedAt', field: 'createdAt_gte', label: 'Created After', type: 'datetime' },
+                    { id: 'projectMaxCreatedAt', field: 'createdAt_lte', label: 'Created Before', type: 'datetime' },
+                    { id: 'projectMinUpdatedAt', field: 'updatedAt_gte', label: 'Updated After', type: 'datetime' },
+                    { id: 'projectMinCounter', field: 'counter_gte', label: 'Min Counter', type: 'number', placeholder: '0' },
+                    { id: 'projectMinSubDuration', field: 'minimumSubscriptionSeconds_gte', label: 'Min Subscription Duration (sec)', type: 'number', placeholder: '3600' },
+                ],
+            },
+            projectPermissions: {
+                label: 'Project Permission',
+                category: 'Marketplace',
+                queryType: 'list',
+                singularQuery: 'projectPermission',
+                description: 'User permissions on marketplace projects (buy, edit, delete, grant)',
+                fields: 'id userAddress project { id metadata isDataUnion score createdAt } canBuy canDelete canEdit canGrant',
+                sortFields: [
+                    { value: 'id', label: 'ID' },
+                    { value: 'userAddress', label: 'User Address' },
+                    { value: 'project__score', label: 'Project Score' },
+                    { value: 'project__createdAt', label: 'Project Created At' },
+                ],
+                defaultSort: { field: 'id', direction: 'asc' },
+                filters: [
+                    { id: 'projPermUserAddress', field: 'userAddress', label: 'User Address', type: 'address', placeholder: '0x...' },
+                    { id: 'projPermUserAddressContains', field: 'userAddress_contains', label: 'User Address Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'projPermProjectId', field: 'project', label: 'Project ID', type: 'text', placeholder: 'project-id' },
+                    { id: 'projPermProjectIdContains', field: 'project_contains', label: 'Project ID Contains', type: 'text', placeholder: 'project' },
+                    { id: 'projPermCanBuy', field: 'canBuy', label: 'Can Buy', type: 'boolean' },
+                    { id: 'projPermCanEdit', field: 'canEdit', label: 'Can Edit', type: 'boolean' },
+                    { id: 'projPermCanDelete', field: 'canDelete', label: 'Can Delete', type: 'boolean' },
+                    { id: 'projPermCanGrant', field: 'canGrant', label: 'Can Grant', type: 'boolean' },
+                ],
+            },
+            projectSubscriptions: {
+                label: 'Project Subscription',
+                category: 'Marketplace',
+                queryType: 'list',
+                singularQuery: 'projectSubscription',
+                description: 'Active and expired project subscriptions with expiration tracking',
+                fields: 'id project { id metadata isDataUnion score stakedWei } userAddress endTimestamp',
+                sortFields: [
+                    { value: 'id', label: 'ID' },
+                    { value: 'endTimestamp', label: 'End Date' },
+                    { value: 'userAddress', label: 'User Address' },
+                    { value: 'project__score', label: 'Project Score' },
+                ],
+                defaultSort: { field: 'endTimestamp', direction: 'desc' },
+                filters: [
+                    { id: 'projSubUserAddress', field: 'userAddress', label: 'User Address', type: 'address', placeholder: '0x...' },
+                    { id: 'projSubUserAddressContains', field: 'userAddress_contains', label: 'User Address Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'projSubProjectId', field: 'project', label: 'Project ID', type: 'text', placeholder: 'project-id' },
+                    { id: 'projSubProjectIdContains', field: 'project_contains', label: 'Project ID Contains', type: 'text', placeholder: 'project' },
+                    { id: 'projSubMinEndDate', field: 'endTimestamp_gte', label: 'Expires After', type: 'datetime' },
+                    { id: 'projSubMaxEndDate', field: 'endTimestamp_lte', label: 'Expires Before', type: 'datetime' },
+                    { id: 'projSubActiveOnly', field: 'endTimestamp_gt', label: 'Active After (timestamp)', type: 'number', placeholder: 'Current timestamp' },
+                ],
+            },
+            projectPurchases: {
+                label: 'Project Purchase',
+                category: 'Marketplace',
+                queryType: 'list',
+                singularQuery: 'projectPurchase',
+                description: 'Complete project purchase history with pricing and fees',
+                fields: 'id project { id metadata isDataUnion score stakedWei createdAt } subscriber subscriptionSeconds price fee purchasedAt',
+                sortFields: [
+                    { value: 'purchasedAt', label: 'Purchase Date' },
+                    { value: 'price', label: 'Price' },
+                    { value: 'fee', label: 'Fee' },
+                    { value: 'subscriptionSeconds', label: 'Duration' },
+                    { value: 'subscriber', label: 'Subscriber' },
+                ],
+                defaultSort: { field: 'purchasedAt', direction: 'desc' },
+                filters: [
+                    { id: 'projPurchaseSubscriber', field: 'subscriber', label: 'Subscriber Address', type: 'address', placeholder: '0x...' },
+                    { id: 'projPurchaseSubscriberContains', field: 'subscriber_contains', label: 'Subscriber Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'projPurchaseProjectId', field: 'project', label: 'Project ID', type: 'text', placeholder: 'project-id' },
+                    { id: 'projPurchaseProjectContains', field: 'project_contains', label: 'Project ID Contains', type: 'text', placeholder: 'project' },
+                    { id: 'projPurchaseMinDate', field: 'purchasedAt_gte', label: 'Purchased After', type: 'datetime' },
+                    { id: 'projPurchaseMaxDate', field: 'purchasedAt_lte', label: 'Purchased Before', type: 'datetime' },
+                    { id: 'projPurchaseMinPrice', field: 'price_gte', label: 'Min Price (wei)', type: 'wei', placeholder: '1000000000000000000' },
+                    { id: 'projPurchaseMaxPrice', field: 'price_lte', label: 'Max Price (wei)', type: 'wei', placeholder: '100000000000000000000' },
+                    { id: 'projPurchaseMinFee', field: 'fee_gte', label: 'Min Fee (wei)', type: 'wei', placeholder: '0' },
+                    { id: 'projPurchaseMinDuration', field: 'subscriptionSeconds_gte', label: 'Min Duration (sec)', type: 'number', placeholder: '86400' },
+                    { id: 'projPurchaseMaxDuration', field: 'subscriptionSeconds_lte', label: 'Max Duration (sec)', type: 'number', placeholder: '31536000' },
+                ],
+            },
+            projectStakeByUsers: {
+                label: 'Project Stake by User',
+                category: 'Marketplace',
+                queryType: 'list',
+                singularQuery: 'projectStakeByUser',
+                description: 'Individual user stake positions on marketplace projects',
+                fields: 'id project { id metadata isDataUnion score stakedWei createdAt updatedAt } user userStake',
+                sortFields: [
+                    { value: 'id', label: 'ID' },
+                    { value: 'userStake', label: 'Stake Amount' },
+                    { value: 'user', label: 'User Address' },
+                    { value: 'project__score', label: 'Project Score' },
+                    { value: 'project__stakedWei', label: 'Total Project Stake' },
+                ],
+                defaultSort: { field: 'userStake', direction: 'desc' },
+                filters: [
+                    { id: 'projStakeUser', field: 'user', label: 'User Address', type: 'address', placeholder: '0x...' },
+                    { id: 'projStakeUserContains', field: 'user_contains', label: 'User Address Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'projStakeProjectId', field: 'project', label: 'Project ID', type: 'text', placeholder: 'project-id' },
+                    { id: 'projStakeProjectContains', field: 'project_contains', label: 'Project ID Contains', type: 'text', placeholder: 'project' },
+                    { id: 'projStakeMinAmount', field: 'userStake_gte', label: 'Min Stake (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'projStakeMaxAmount', field: 'userStake_lte', label: 'Max Stake (DATA)', type: 'wei', placeholder: '100000' },
+                    { id: 'projStakeNonZero', field: 'userStake_gt', label: 'Stake Greater Than (DATA)', type: 'wei', placeholder: '0' },
+                ],
+            },
+            projectStakingDayBuckets: {
+                label: 'Project Staking Day Bucket',
+                category: 'Metrics',
+                queryType: 'list',
+                singularQuery: 'projectStakingDayBucket',
+                description: 'Daily staking metrics for projects - track stake changes over time',
+                fields: 'id project { id metadata score stakedWei isDataUnion } date stakeAtStart stakeChange stakingsWei unstakingsWei',
+                sortFields: [
+                    { value: 'date', label: 'Date' },
+                    { value: 'stakeAtStart', label: 'Stake at Start' },
+                    { value: 'stakeChange', label: 'Stake Change' },
+                    { value: 'stakingsWei', label: 'Stakings' },
+                    { value: 'unstakingsWei', label: 'Unstakings' },
+                ],
+                defaultSort: { field: 'date', direction: 'desc' },
+                filters: [
+                    { id: 'projStakingBucketProjectId', field: 'project', label: 'Project ID', type: 'text', placeholder: 'project-id' },
+                    { id: 'projStakingBucketProjectContains', field: 'project_contains', label: 'Project ID Contains', type: 'text', placeholder: 'project' },
+                    { id: 'projStakingBucketMinDate', field: 'date_gte', label: 'From Date', type: 'datetime' },
+                    { id: 'projStakingBucketMaxDate', field: 'date_lte', label: 'To Date', type: 'datetime' },
+                    { id: 'projStakingBucketMinStakeStart', field: 'stakeAtStart_gte', label: 'Min Stake at Start (DATA)', type: 'wei', placeholder: '1000' },
+                    { id: 'projStakingBucketMinStakeChange', field: 'stakeChange_gte', label: 'Min Stake Change (DATA)', type: 'wei', placeholder: '0' },
+                    { id: 'projStakingBucketMaxStakeChange', field: 'stakeChange_lte', label: 'Max Stake Change (DATA)', type: 'wei', placeholder: '0' },
+                    { id: 'projStakingBucketMinStakings', field: 'stakingsWei_gte', label: 'Min Stakings (DATA)', type: 'wei', placeholder: '100' },
+                    { id: 'projStakingBucketMinUnstakings', field: 'unstakingsWei_gte', label: 'Min Unstakings (DATA)', type: 'wei', placeholder: '100' },
+                ],
+            },
+            projectPaymentDetails: {
+                label: 'Project Payment Details',
+                category: 'Marketplace',
+                queryType: 'list',
+                singularQuery: 'projectPaymentDetails',
+                description: 'Payment configuration for projects - pricing tokens, beneficiaries and rates',
+                fields: 'id project { id metadata isDataUnion score stakedWei createdAt } domainId beneficiary pricingTokenAddress pricePerSecond',
+                sortFields: [
+                    { value: 'id', label: 'ID' },
+                    { value: 'pricePerSecond', label: 'Price Per Second' },
+                    { value: 'domainId', label: 'Domain ID' },
+                    { value: 'beneficiary', label: 'Beneficiary' },
+                ],
+                defaultSort: { field: 'pricePerSecond', direction: 'desc' },
+                filters: [
+                    { id: 'paymentProjectId', field: 'project', label: 'Project ID', type: 'text', placeholder: 'project-id' },
+                    { id: 'paymentProjectContains', field: 'project_contains', label: 'Project ID Contains', type: 'text', placeholder: 'project' },
+                    { id: 'paymentBeneficiary', field: 'beneficiary', label: 'Beneficiary Address', type: 'address', placeholder: '0x...' },
+                    { id: 'paymentBeneficiaryContains', field: 'beneficiary_contains', label: 'Beneficiary Contains', type: 'text', placeholder: '0x...' },
+                    { id: 'paymentTokenAddress', field: 'pricingTokenAddress', label: 'Pricing Token Address', type: 'address', placeholder: '0x...' },
+                    { id: 'paymentDomainId', field: 'domainId', label: 'Domain ID', type: 'text', placeholder: '137' },
+                    { id: 'paymentMinPrice', field: 'pricePerSecond_gte', label: 'Min Price/Second (wei)', type: 'wei', placeholder: '0' },
+                    { id: 'paymentMaxPrice', field: 'pricePerSecond_lte', label: 'Max Price/Second (wei)', type: 'wei', placeholder: '1000000000000000' },
+                ],
+            },
+            // ─────────────────────────────────────────────────
+            // SUBGRAPH META
+            // ─────────────────────────────────────────────────
+            _meta: {
+                label: 'Subgraph Meta',
+                category: 'Network',
+                queryType: 'meta',
+                singularQuery: '_meta',
+                description: 'Subgraph indexing status - current block, deployment hash and error status',
+                fields: 'block { hash number timestamp parentHash } deployment hasIndexingErrors',
+                sortFields: [],
+                defaultSort: { field: 'id', direction: 'asc' },
+                filters: [],
+                singleIdRequired: false,
+            },
         };
 
-        // --- Default Sorting Configuration ---
-        const DEFAULT_SORT = {
-            streams: { field: 'createdAt', direction: 'desc' },
-            sponsorships: { field: 'spotAPY', direction: 'desc' },
-            operators: { field: 'valueWithoutEarnings', direction: 'desc' },
-            stakes: { field: 'amountWei', direction: 'desc' },
-            delegations: { field: '_valueDataWei', direction: 'desc' },
-            delegators: { field: 'id', direction: 'asc' },
-            stakingEvents: { field: 'date', direction: 'desc' },
-            sponsoringEvents: { field: 'date', direction: 'desc' },
-            sponsorshipDailyBuckets: { field: 'date', direction: 'desc' },
-            operatorDailyBuckets: { field: 'date', direction: 'desc' },
-            nodes: { field: 'lastSeen', direction: 'desc' }, // NEW: Default sort by last seen
-        };
+        // Helper to get entity categories for UI grouping
+        const ENTITY_CATEGORIES = [...new Set(Object.values(ENTITY_CONFIG).map(e => e.category))];
+
+        // Helper to get entities by category
+        function getEntitiesByCategory(category) {
+            return Object.entries(ENTITY_CONFIG)
+                .filter(([key, config]) => config.category === category)
+                .map(([key, config]) => ({ key, ...config }));
+        }
 
         // --- Pagination State ---
         // Store current result set size to determine if 'Next Page' should be enabled
@@ -421,14 +1215,15 @@
          * Checks the current skip offset and last result count to enable/disables pagination buttons.
          */
         window.checkPaginationButtons = function() {
+            const entityName = document.getElementById('entityName').value;
+            const config = ENTITY_CONFIG[entityName];
             const skip = parseInt(document.getElementById('querySkip').value) || 0;
             const limit = parseInt(document.getElementById('queryLimit').value) || 10;
             const prevBtn = document.getElementById('prevPageButton');
             const nextBtn = document.getElementById('nextPageButton');
-            const isDelegator = document.getElementById('entityName').value === 'delegators';
 
-            // Disable all pagination controls if in Delegator mode (single ID lookup)
-            if (isDelegator) {
+            // Disable all pagination controls for single entity queries
+            if (config && config.queryType === 'single') {
                 prevBtn.disabled = true;
                 nextBtn.disabled = true;
                 return;
@@ -438,7 +1233,6 @@
             prevBtn.disabled = skip <= 0;
 
             // Enable Next button if we received a full page of results (meaning there might be more)
-            // Note: Since max limit is 1000, if lastResultCount is less than limit, there are no more pages.
             nextBtn.disabled = lastResultCount < limit || isManualOverride;
         }
 
@@ -625,649 +1419,356 @@
         }
 
         /**
-         * Renders filter and sorting fields based on the selected entity and adds listeners.
+         * Renders filter and sorting fields based on the selected entity using ENTITY_CONFIG.
          */
         window.updateFilterInputs = function() {
             const entityName = document.getElementById('entityName').value;
             const filterInputsContainer = document.getElementById('filterInputs');
             const orderByField = document.getElementById('orderByField');
+            const config = ENTITY_CONFIG[entityName];
 
-            document.getElementById('currentEntityFilter').textContent = entityName.charAt(0).toUpperCase() + entityName.slice(1);
-            filterInputsContainer.innerHTML = ''; // Clears previous filter inputs
+            if (!config) {
+                console.error(`No config found for entity: ${entityName}`);
+                return;
+            }
 
-            // --- 1. Populate Sorting Fields ---
-            const availableSortFields = SORT_FIELDS[entityName] || [{ value: 'id', label: 'ID' }];
+            // Update header with entity name and description
+            document.getElementById('currentEntityFilter').innerHTML = `${config.label} <span class="text-xs text-gray-500 font-normal">(${config.category})</span>`;
+            
+            filterInputsContainer.innerHTML = ''; // Clear previous filter inputs
+
+            // --- 1. Populate Sorting Fields from ENTITY_CONFIG ---
+            const availableSortFields = config.sortFields || [{ value: 'id', label: 'ID' }];
             let sortOptionsHtml = availableSortFields.map(field => {
-                // Set default selected option based on DEFAULT_SORT configuration
-                const isSelected = document.getElementById('orderByField')?.value === field.value || DEFAULT_SORT[entityName]?.field === field.value ? 'selected' : '';
+                const isSelected = config.defaultSort?.field === field.value ? 'selected' : '';
                 return `<option value="${field.value}" ${isSelected}>${field.label}</option>`;
             }).join('');
             orderByField.innerHTML = sortOptionsHtml;
 
-            // Set default direction for the entity
-            const defaultDirection = DEFAULT_SORT[entityName]?.direction || 'desc';
-            document.getElementById('orderDirection').value = document.getElementById('orderDirection')?.value || defaultDirection;
+            // Set default direction
+            const defaultDirection = config.defaultSort?.direction || 'desc';
+            document.getElementById('orderDirection').value = defaultDirection;
 
+            // --- 2. Handle Meta Query Type (like '_meta') ---
+            if (config.queryType === 'meta') {
+                filterInputsContainer.innerHTML = `
+                    <div class="col-span-full text-center py-4">
+                        <div class="text-gray-400 text-sm">
+                            <span class="text-2xl">ℹ️</span>
+                            <p class="mt-2">This query returns subgraph metadata.</p>
+                            <p class="text-xs text-gray-500 mt-1">No filters needed - returns current indexing status and block information.</p>
+                        </div>
+                    </div>
+                `;
+                updateRawQueryPreview();
+                return;
+            }
+            
+            // --- 3. Handle Single Query Type (like 'network') ---
+            if (config.queryType === 'single') {
+                // Hide pagination for single queries
+                document.getElementById('queryLimit').closest('div').classList.add('hidden');
+                document.getElementById('querySkip').closest('div').classList.add('hidden');
+                document.getElementById('orderByField').closest('div').classList.add('hidden');
+                document.getElementById('orderDirection').closest('div').classList.add('hidden');
+            } else {
+                document.getElementById('queryLimit').closest('div').classList.remove('hidden');
+                document.getElementById('querySkip').closest('div').classList.remove('hidden');
+                document.getElementById('orderByField').closest('div').classList.remove('hidden');
+                document.getElementById('orderDirection').closest('div').classList.remove('hidden');
+            }
 
-            // --- 2. Generate Filter HTML ---
-            let html = '';
-            // Define global input change handler (used for re-generating query preview)
-            const onInputChange = 'updateRawQueryPreview()';
+            // --- 3. Generate Filter HTML Dynamically ---
+            if (!config.filters || config.filters.length === 0) {
+                filterInputsContainer.innerHTML = '<p class="text-gray-500 text-sm">No filters available for this entity.</p>';
+                updateRawQueryPreview();
+                return;
+            }
 
-            // Define common date input type
-            const dateInputType = 'datetime-local';
-
-            switch (entityName) {
-                case 'streams':
-                    html = `
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full">
-                                <label for="streamIdFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Stream ID Containing</label>
-                                <input type="text" id="streamIdFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: streamr-dev/my-test-stream">
-                            </div>
-                            <div class="w-full">
-                                <label for="streamMetadataFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Metadata Containing</label>
-                                <input type="text" id="streamMetadataFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 'sensor-data'">
-                            </div>
-                        </div>
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full">
-                                <label for="streamCreatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Creator Address (ID)</label>
-                                <input type="text" id="streamCreatorFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0x... (ETH Address)">
-                            </div>
-                            <div class="w-full">
-                                <label for="streamMinCreatedAt" class="block text-xs font-medium text-gray-400 mb-1">Created After</label>
-                                <input type="${dateInputType}" id="streamMinCreatedAt" onchange="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
-                            </div>
-                        </div>
-                        <div class="w-full">
-                            <label for="streamMaxCreatedAt" class="block text-xs font-medium text-gray-400 mb-1">Created Before</label>
-                            <input type="${dateInputType}" id="streamMaxCreatedAt" onchange="${onInputChange}"
-                                   class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
-                        </div>
-                    `;
-                    break;
-                case 'sponsorships':
-                    html = `
-                        <div class="flex flex-col sm:flex-row gap-4">
-                             <div class="w-full">
-                                 <label for="sponsorshipCreatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Creator Address</label>
-                                 <input type="text" id="sponsorshipCreatorFilter" oninput="${onInputChange}"
-                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                        placeholder="Ex: 0x... (ETH Address)">
-                             </div>
-                             <div class="w-full">
-                                 <label for="sponsorshipMinApy" class="block text-xs font-medium text-gray-400 mb-1">Minimum APY (Decimal Value Ex: 0.1 for 10%)</label>
-                                 <input type="number" step="0.0001" id="sponsorshipMinApy" oninput="${onInputChange}"
-                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                        placeholder="Ex: 0.1">
-                             </div>
-                        </div>
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full">
-                                <label for="sponsorshipMinOperators" class="block text-xs font-medium text-gray-400 mb-1">Minimum Operators</label>
-                                <input type="number" id="sponsorshipMinOperators" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 1">
-                            </div>
-                            <div class="w-full">
-                                <label for="sponsorshipIsRunning" class="block text-xs font-medium text-gray-400 mb-1">Is Active?</label>
-                                <select id="sponsorshipIsRunning" onchange="${onInputChange}" class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white">
-                                    <option value="">Do Not Apply Filter</option>
-                                    <option value="true">Yes</option>
-                                    <option value="false">No</option>
-                                </select>
-                            </div>
-                        </div>
-                        <!-- Additional Financial Filters -->
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full">
-                                <label for="sponsorshipMinRemainingWei" class="block text-xs font-medium text-gray-400 mb-1">Minimum Remaining Fund (in DATA)</label>
-                                <input type="text" id="sponsorshipMinRemainingWei" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 10 (or 10.5)">
-                            </div>
-                            <div class="w-full">
-                                <label for="sponsorshipMaxPayoutPerSec" class="block text-xs font-medium text-gray-400 mb-1">Max Payout Per Second (in DATA)</label>
-                                <input type="text" id="sponsorshipMaxPayoutPerSec" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0.00001">
-                            </div>
-                        </div>
-                    `;
-                    break;
-                case 'operators':
-                    html = `
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full">
-                                <label for="operatorIdFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Address (ID) Containing</label>
-                                <input type="text" id="operatorIdFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0x... (ETH Address fragment)">
-                            </div>
-                            <div class="w-full">
-                                <label for="operatorMinDelegators" class="block text-xs font-medium text-gray-400 mb-1">Minimum Delegators</label>
-                                <input type="number" id="operatorMinDelegators" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 5">
-                            </div>
-                        </div>
-                        <!-- Staking and Cut Filters -->
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full">
-                                <label for="operatorMinValue" class="block text-xs font-medium text-gray-400 mb-1">Minimum Staked Value (in DATA)</label>
-                                <input type="text" id="operatorMinValue" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 100 (or 100.5)">
-                            </div>
-                            <div class="w-full">
-                                <label for="operatorMinCut" class="block text-xs font-medium text-gray-400 mb-1">Minimum Operator's Cut (0.00 to 1.00)</label>
-                                <input type="number" step="0.0001" id="operatorMinCut" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0.01 (1%)">
-                            </div>
-                        </div>
-                    `;
-                    break;
-                case 'stakes':
-                    html = `
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full">
-                                <label for="stakeOperatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Operator Address</label>
-                                <input type="text" id="stakeOperatorFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0x... (Full ETH Address)">
-                            </div>
-                            <div class="w-full">
-                                <label for="stakeSponsorshipFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Sponsorship Address</label>
-                                <input type="text" id="stakeSponsorshipFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0x... (Full ETH Address)">
-                            </div>
-                        </div>
-                        <div class="w-full">
-                            <label for="stakeMinAmountWei" class="block text-xs font-medium text-gray-400 mb-1">Minimum Staked Amount (in DATA)</label>
-                            <input type="text" id="stakeMinAmountWei" oninput="${onInputChange}"
-                                   class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                   placeholder="Ex: 1">
-                        </div>
-                    `;
-                    break;
-                case 'delegations':
-                    html = `
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full">
-                                <label for="delegationDelegatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Delegator Address</label>
-                                <input type="text" id="delegationDelegatorFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0x... (Full ETH Address)">
-                            </div>
-                            <div class="w-full">
-                                <label for="delegationOperatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Operator Address</label>
-                                <input type="text" id="delegationOperatorFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0x... (Full ETH Address)">
-                            </div>
-                        </div>
-                        <div class="w-full">
-                            <label for="delegationMinValueWei" class="block text-xs font-medium text-gray-400 mb-1">Minimum Delegated Value (in DATA)</label>
-                            <input type="text" id="delegationMinValueWei" oninput="${onInputChange}"
-                                   class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                   placeholder="Ex: 1">
-                        </div>
-                    `;
-                    break;
-                case 'delegators':
-                    html = `
-                        <p class="text-xs text-blue-400 p-2 bg-blue-900 rounded-lg font-medium">
-                            Note: The Delegator entity requires an exact ID for lookup (does not support list filters).
-                            Please enter a valid address in the field below.
+            let html = '<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">';
+            
+            config.filters.forEach(filter => {
+                html += generateFilterInput(filter);
+            });
+            
+            html += '</div>';
+            
+            // Add info message for single query types
+            if (config.queryType === 'single' && config.singleIdRequired) {
+                html = `
+                    <div class="mb-4 p-3 bg-blue-900/50 border border-blue-700 rounded-lg">
+                        <p class="text-sm text-blue-300">
+                            <strong>ℹ️ Single Entity Query:</strong> This entity requires an ID for lookup. 
+                            Enter the ID below to fetch the specific record.
                         </p>
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full md:w-1/2">
-                                <label for="delegatorIdFilter" class="block text-xs font-medium text-gray-400 mb-1">Exact Delegator Address (ID)</label>
-                                <input type="text" id="delegatorIdFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-blue-500 rounded-lg bg-gray-700 text-white text-sm font-mono"
-                                       placeholder="0x... (Valid, full ETH Address)">
-                            </div>
-                            <div class="w-full md:w-1/2">
-                                <label for="delegatorMinTotalDelegated" class="block text-xs font-medium text-gray-400 mb-1">Minimum Total Delegated Value (in DATA)</label>
-                                <input type="text" id="delegatorMinTotalDelegated" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-800 text-gray-500 text-sm"
-                                       placeholder="Field Unavailable in Current Subgraph" disabled title="This field does not exist in the test subgraph 'EGWFdhhiWypDuz22Uy7b3F69E9MEkyfU9iAQMttkH5Rj'">
-                            </div>
-                        </div>
-                    `;
-                    break;
-                case 'stakingEvents':
-                    html = `
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full">
-                                <label for="stakingEventOperatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Operator Address</label>
-                                <input type="text" id="stakingEventOperatorFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0x... (ETH Address)">
-                            </div>
-                            <div class="w-full">
-                                <label for="stakingEventSponsorshipFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Sponsorship Address</label>
-                                <input type="text" id="stakingEventSponsorshipFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0x... (ETH Address)">
-                            </div>
-                        </div>
-                        
-                        <!-- NEW AMOUNT FILTERS -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="w-full">
-                                <label for="stakingEventMinAmount" class="block text-xs font-medium text-gray-400 mb-1">Minimum Amount (in DATA)</label>
-                                <input type="text" id="stakingEventMinAmount" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 100">
-                            </div>
-                            <div class="w-full">
-                                <label for="stakingEventMaxAmount" class="block text-xs font-medium text-gray-400 mb-1">Maximum Amount (in DATA)</label>
-                                <input type="text" id="stakingEventMaxAmount" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 1000">
-                            </div>
-                        </div>
-                        
-                        <!-- DATE FILTERS -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                             <div class="w-full">
-                                 <label for="stakingEventMinDate" class="block text-xs font-medium text-gray-400 mb-1">Minimum Date</label>
-                                 <input type="${dateInputType}" id="stakingEventMinDate" onchange="${onInputChange}"
-                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
-                             </div>
-                             <div class="w-full">
-                                 <label for="stakingEventMaxDate" class="block text-xs font-medium text-gray-400 mb-1">Maximum Date</label>
-                                 <input type="${dateInputType}" id="stakingEventMaxDate" onchange="${onInputChange}"
-                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
-                             </div>
-                        </div>
-                    `;
-                    break;
-                case 'sponsoringEvents':
-                    html = `
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full">
-                                <label for="sponsoringEventSponsorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Sponsor Address</label>
-                                <input type="text" id="sponsoringEventSponsorFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0x... (ETH Address)">
-                            </div>
-                            <div class="w-full">
-                                <label for="sponsoringEventSponsorshipFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Sponsorship Address</label>
-                                <input type="text" id="sponsoringEventSponsorshipFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0x... (ETH Address)">
-                            </div>
-                        </div>
-                        
-                        <!-- NEW AMOUNT FILTERS -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="w-full">
-                                <label for="sponsoringEventMinAmount" class="block text-xs font-medium text-gray-400 mb-1">Minimum Amount (in DATA)</label>
-                                <input type="text" id="sponsoringEventMinAmount" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 100">
-                            </div>
-                            <div class="w-full">
-                                <label for="sponsoringEventMaxAmount" class="block text-xs font-medium text-gray-400 mb-1">Maximum Amount (in DATA)</label>
-                                <input type="text" id="sponsoringEventMaxAmount" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 1000">
-                            </div>
-                        </div>
-
-                        <!-- DATE FILTERS -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                             <div class="w-full">
-                                 <label for="sponsoringEventMinDate" class="block text-xs font-medium text-gray-400 mb-1">Minimum Date</label>
-                                 <input type="${dateInputType}" id="sponsoringEventMinDate" onchange="${onInputChange}"
-                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
-                             </div>
-                             <div class="w-full">
-                                 <label for="sponsoringEventMaxDate" class="block text-xs font-medium text-gray-400 mb-1">Maximum Date</label>
-                                 <input type="${dateInputType}" id="sponsoringEventMaxDate" onchange="${onInputChange}"
-                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
-                             </div>
-                        </div>
-                    `;
-                    break;
-                case 'sponsorshipDailyBuckets':
-                    html = `
-                             <div class="flex flex-col sm:flex-row gap-4">
-                                 <div class="w-full">
-                                     <label for="dailyBucketSponsorshipFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Sponsorship Address</label>
-                                     <input type="text" id="dailyBucketSponsorshipFilter" oninput="${onInputChange}"
-                                            class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                            placeholder="Ex: 0x... (ETH Address)">
-                                 </div>
-                                 <div class="w-full">
-                                     <label for="dailyBucketMinApy" class="block text-xs font-medium text-gray-400 mb-1">Minimum APY (Decimal Value Ex: 0.1 for 10%)</label>
-                                     <input type="number" step="0.0001" id="dailyBucketMinApy" oninput="${onInputChange}"
-                                            class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                            placeholder="Ex: 0.1">
-                                 </div>
-                             </div>
-                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  <div class="w-full">
-                                      <label for="dailyBucketMinDate" class="block text-xs font-medium text-gray-400 mb-1">Minimum Date</label>
-                                      <input type="${dateInputType}" id="dailyBucketMinDate" onchange="${onInputChange}"
-                                             class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
-                                  </div>
-                                  <div class="w-full">
-                                      <label for="dailyBucketMaxDate" class="block text-xs font-medium text-gray-400 mb-1">Maximum Date</label>
-                                      <input type="${dateInputType}" id="dailyBucketMaxDate" onchange="${onInputChange}"
-                                             class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
-                                  </div>
-                             </div>
-                    `;
-                    break;
-                case 'operatorDailyBuckets':
-                    html = `
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full">
-                                <label for="operatorDailyOperatorFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Operator Address</label>
-                                <input type="text" id="operatorDailyOperatorFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0x... (ETH Address)">
-                            </div>
-                            <div class="w-full">
-                                <label for="operatorDailyMinDate" class="block text-xs font-medium text-gray-400 mb-1">Minimum Date</label>
-                                <input type="${dateInputType}" id="operatorDailyMinDate" onchange="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="w-full">
-                                <label for="operatorDailyMinProfits" class="block text-xs font-medium text-gray-400 mb-1">Minimum Profits (in DATA)</label>
-                                <input type="text" id="operatorDailyMinProfits" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 1">
-                            </div>
-                            <div class="w-full">
-                                <label for="operatorDailyMaxLosses" class="block text-xs font-medium text-gray-400 mb-1">Maximum Losses (in DATA)</label>
-                                <input type="text" id="operatorDailyMaxLosses" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 1">
-                            </div>
-                        </div>
-                        <div class="w-full">
-                            <label for="operatorDailyMaxDate" class="block text-xs font-medium text-gray-400 mb-1">Maximum Date</label>
-                            <input type="${dateInputType}" id="operatorDailyMaxDate" onchange="${onInputChange}"
-                                   class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
-                        </div>
-                    `;
-                    break;
-                case 'nodes': // NEW: Node Filters
-                    html = `
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="w-full">
-                                <label for="nodeIdFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Node Address (ID) Containing</label>
-                                <input type="text" id="nodeIdFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 0x... (Node Address fragment)">
-                            </div>
-                            <div class="w-full">
-                                <label for="nodeMetadataFilter" class="block text-xs font-medium text-gray-400 mb-1">Filter by Metadata Containing</label>
-                                <input type="text" id="nodeMetadataFilter" oninput="${onInputChange}"
-                                       class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm"
-                                       placeholder="Ex: 'client version'">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                             <div class="w-full">
-                                 <label for="nodeMinLastSeenDate" class="block text-xs font-medium text-gray-400 mb-1">Last Seen After</label>
-                                 <input type="${dateInputType}" id="nodeMinLastSeenDate" onchange="${onInputChange}"
-                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
-                             </div>
-                             <div class="w-full">
-                                 <label for="nodeMaxLastSeenDate" class="block text-xs font-medium text-gray-400 mb-1">Last Seen Before</label>
-                                 <input type="${dateInputType}" id="nodeMaxLastSeenDate" onchange="${onInputChange}"
-                                        class="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-white text-sm">
-                             </div>
-                        </div>
-                    `;
-                    break;
-                default:
-                    html = '<p class="text-gray-500 text-sm">No advanced filters available for this entity.</p>';
+                    </div>
+                ` + html;
             }
 
             filterInputsContainer.innerHTML = html;
             
-            // Force the query preview update
+            // Apply default values if any
+            config.filters.forEach(filter => {
+                if (filter.defaultValue) {
+                    const el = document.getElementById(filter.id);
+                    if (el) el.value = filter.defaultValue;
+                }
+            });
+            
             updateRawQueryPreview();
         }
 
         /**
-         * Extracts filter values from the DOM and builds the query 'where' string.
-         * IMPORTANT: Now uses dateToTimestamp for date fields and dataToWei for DATA fields.
+         * Generates HTML for a single filter input based on its type.
+         */
+        function generateFilterInput(filter) {
+            const onInputChange = 'updateRawQueryPreview()';
+            const baseInputClass = 'w-full p-2 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors';
+            
+            let inputHtml = '';
+            
+            switch (filter.type) {
+                case 'text':
+                case 'address':
+                    inputHtml = `
+                        <input type="text" id="${filter.id}" oninput="${onInputChange}"
+                               class="${baseInputClass} ${filter.type === 'address' ? 'font-mono' : ''}"
+                               placeholder="${filter.placeholder || ''}">
+                    `;
+                    break;
+                    
+                case 'number':
+                    inputHtml = `
+                        <input type="number" id="${filter.id}" oninput="${onInputChange}"
+                               step="${filter.step || '1'}"
+                               class="${baseInputClass}"
+                               placeholder="${filter.placeholder || ''}">
+                    `;
+                    break;
+                    
+                case 'wei':
+                    inputHtml = `
+                        <input type="text" id="${filter.id}" oninput="${onInputChange}"
+                               class="${baseInputClass}"
+                               placeholder="${filter.placeholder || ''}"
+                               title="Enter amount in DATA tokens (will be converted to Wei)">
+                    `;
+                    break;
+                    
+                case 'fraction':
+                    inputHtml = `
+                        <input type="number" id="${filter.id}" oninput="${onInputChange}"
+                               step="0.0001" min="0" max="1"
+                               class="${baseInputClass}"
+                               placeholder="${filter.placeholder || ''}"
+                               title="Enter a value between 0 and 1">
+                    `;
+                    break;
+                    
+                case 'datetime':
+                    inputHtml = `
+                        <input type="datetime-local" id="${filter.id}" onchange="${onInputChange}"
+                               class="${baseInputClass}">
+                    `;
+                    break;
+                    
+                case 'boolean':
+                    inputHtml = `
+                        <select id="${filter.id}" onchange="${onInputChange}" class="${baseInputClass}">
+                            <option value="">-- Any --</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    `;
+                    break;
+                    
+                default:
+                    inputHtml = `
+                        <input type="text" id="${filter.id}" oninput="${onInputChange}"
+                               class="${baseInputClass}"
+                               placeholder="${filter.placeholder || ''}">
+                    `;
+            }
+            
+            return `
+                <div class="w-full">
+                    <label for="${filter.id}" class="block text-xs font-medium text-gray-400 mb-1">
+                        ${filter.label}${filter.required ? ' <span class="text-red-400">*</span>' : ''}
+                    </label>
+                    ${inputHtml}
+                </div>
+            `;
+        }
+
+        /**
+         * Extracts filter values from the DOM and builds the query 'where' string using ENTITY_CONFIG.
          */
         function getFilterWhereClause(entityName) {
+            const config = ENTITY_CONFIG[entityName];
+            if (!config || !config.filters) return '';
+            
             const filters = [];
-
-            const safeGetElementValue = (id) => document.getElementById(id)?.value?.trim() || '';
-            const getTimestampValue = (id) => dateToTimestamp(safeGetElementValue(id));
-            const getWeiValue = (id) => dataToWei(safeGetElementValue(id)); // NEW: Convert DATA to Wei for filtering
-
-            switch (entityName) {
-                case 'streams':
-                    const streamId = safeGetElementValue('streamIdFilter');
-                    const streamMetadata = safeGetElementValue('streamMetadataFilter');
-                    const streamCreator = safeGetElementValue('streamCreatorFilter');
-                    const streamMinCreatedAt = getTimestampValue('streamMinCreatedAt');
-                    const streamMaxCreatedAt = getTimestampValue('streamMaxCreatedAt'); 
-                    
-                    if (streamId) filters.push(`idAsString_contains_nocase: "${streamId.toLowerCase()}"`);
-                    if (streamMetadata) filters.push(`metadata_contains_nocase: "${streamMetadata.toLowerCase()}"`);
-                    if (streamCreator) filters.push(`creator: "${streamCreator.toLowerCase()}"`);
-                    if (streamMinCreatedAt) filters.push(`createdAt_gte: "${streamMinCreatedAt}"`);
-                    if (streamMaxCreatedAt) filters.push(`createdAt_lte: "${streamMaxCreatedAt}"`); 
-                    break;
-                case 'sponsorships':
-                    const sponsorshipCreator = safeGetElementValue('sponsorshipCreatorFilter');
-                    const sponsorshipMinApy = safeGetElementValue('sponsorshipMinApy');
-                    const sponsorshipMinOperators = safeGetElementValue('sponsorshipMinOperators');
-                    const sponsorshipIsRunning = safeGetElementValue('sponsorshipIsRunning');
-                    
-                    // Convert DATA to Wei for filtering
-                    const minRemainingWei = getWeiValue('sponsorshipMinRemainingWei'); 
-                    const maxPayoutPerSec = getWeiValue('sponsorshipMaxPayoutPerSec'); 
-
-                    if (sponsorshipCreator) filters.push(`creator: "${sponsorshipCreator.toLowerCase()}"`);
-                    if (sponsorshipMinApy) filters.push(`spotAPY_gte: "${sponsorshipMinApy}"`);
-                    if (sponsorshipMinOperators) filters.push(`minOperators_gte: ${sponsorshipMinOperators}`);
-                    if (sponsorshipIsRunning) filters.push(`isRunning: ${sponsorshipIsRunning}`);
-                    if (minRemainingWei) filters.push(`remainingWei_gte: "${minRemainingWei}"`); // Use converted Wei value
-                    if (maxPayoutPerSec) filters.push(`totalPayoutWeiPerSec_lte: "${maxPayoutPerSec}"`); // Use converted Wei value
-                    break;
-                case 'operators':
-                    const operatorId = safeGetElementValue('operatorIdFilter');
-                    const operatorMinDelegators = safeGetElementValue('operatorMinDelegators');
-                    
-                    // Convert DATA to Wei for filtering
-                    const minStakedValue = getWeiValue('operatorMinValue');
-                    
-                    // Operator Cut is special: it's stored as a fraction of 1e18, but inputting 0.01 is simpler.
-                    const operatorMinCutInput = safeGetElementValue('operatorMinCut');
-                    let operatorMinCutWei = null;
-
-                    if (operatorMinCutInput) {
+            
+            config.filters.forEach(filter => {
+                const element = document.getElementById(filter.id);
+                if (!element) return;
+                
+                const rawValue = element.value.trim();
+                if (!rawValue) return;
+                
+                let processedValue = rawValue;
+                let filterString = '';
+                
+                switch (filter.type) {
+                    case 'address':
+                        // Lowercase addresses for consistency
+                        processedValue = rawValue.toLowerCase();
+                        filterString = `${filter.field}: "${processedValue}"`;
+                        break;
+                        
+                    case 'text':
+                        // Check if field expects lowercase (contains_nocase doesn't need it)
+                        if (filter.field.includes('_contains') && !filter.field.includes('nocase')) {
+                            processedValue = rawValue.toLowerCase();
+                        }
+                        filterString = `${filter.field}: "${processedValue}"`;
+                        break;
+                        
+                    case 'number':
+                        filterString = `${filter.field}: ${rawValue}`;
+                        break;
+                        
+                    case 'wei':
+                        // Convert DATA to Wei
+                        const weiValue = dataToWei(rawValue);
+                        if (weiValue) {
+                            filterString = `${filter.field}: "${weiValue}"`;
+                        }
+                        break;
+                        
+                    case 'fraction':
+                        // Convert fraction (0-1) to BigInt (multiply by 1e18)
                         try {
-                            const cutFraction = parseFloat(operatorMinCutInput);
-                            if (!isNaN(cutFraction) && cutFraction >= 0 && cutFraction <= 1) {
-                                // Multiply by 1e18 (BigInt conversion to match GraphQL type)
-                                operatorMinCutWei = BigInt(Math.round(cutFraction * 1e18)).toString();
+                            const fraction = parseFloat(rawValue);
+                            if (!isNaN(fraction) && fraction >= 0 && fraction <= 1) {
+                                const fractionWei = BigInt(Math.round(fraction * 1e18)).toString();
+                                filterString = `${filter.field}: "${fractionWei}"`;
                             }
                         } catch (e) {
-                            console.error("Invalid operator cut input:", e);
+                            console.error('Invalid fraction value:', e);
                         }
-                    }
-
-                    if (operatorId) filters.push(`id_contains: "${operatorId.toLowerCase()}"`);
-                    if (operatorMinDelegators) filters.push(`delegatorCount_gte: ${operatorMinDelegators}`);
-                    if (minStakedValue) filters.push(`valueWithoutEarnings_gte: "${minStakedValue}"`); // Use converted Wei value
-                    if (operatorMinCutWei) filters.push(`operatorsCutFraction_gte: "${operatorMinCutWei}"`);
-                    break;
-                case 'stakes':
-                    const stakeOperator = safeGetElementValue('stakeOperatorFilter');
-                    const stakeSponsorship = safeGetElementValue('stakeSponsorshipFilter');
-                    const minStakeAmount = getWeiValue('stakeMinAmountWei'); // Use converted Wei value
-
-                    if (stakeOperator) filters.push(`operator: "${stakeOperator.toLowerCase()}"`);
-                    if (stakeSponsorship) filters.push(`sponsorship: "${stakeSponsorship.toLowerCase()}"`);
-                    if (minStakeAmount) filters.push(`amountWei_gte: "${minStakeAmount}"`); 
-                    break;
-                case 'delegations':
-                    const delegationDelegator = safeGetElementValue('delegationDelegatorFilter');
-                    const delegationOperator = safeGetElementValue('delegationOperatorFilter');
-                    const minDelegationValue = getWeiValue('delegationMinValueWei'); // Use converted Wei value
-
-                    if (delegationDelegator) filters.push(`delegator: "${delegationDelegator.toLowerCase()}"`);
-                    if (delegationOperator) filters.push(`operator: "${delegationOperator.toLowerCase()}"`);
-                    if (minDelegationValue) filters.push(`_valueDataWei_gte: "${minDelegationValue}"`); 
-                    break;
-                case 'stakingEvents':
-                    // --- NEW AMOUNT FILTERS ---
-                    const seMinAmount = getWeiValue('stakingEventMinAmount');
-                    const seMaxAmount = getWeiValue('stakingEventMaxAmount');
-
-                    const seOperator = safeGetElementValue('stakingEventOperatorFilter');
-                    const seSponsorship = safeGetElementValue('stakingEventSponsorshipFilter');
-                    const seMinDate = getTimestampValue('stakingEventMinDate');
-                    const seMaxDate = getTimestampValue('stakingEventMaxDate'); 
-                    
-                    if (seMinAmount) filters.push(`amount_gte: "${seMinAmount}"`);
-                    if (seMaxAmount) filters.push(`amount_lte: "${seMaxAmount}"`);
-
-                    if (seOperator) filters.push(`operator: "${seOperator.toLowerCase()}"`);
-                    if (seSponsorship) filters.push(`sponsorship: "${seSponsorship.toLowerCase()}"`);
-                    if (seMinDate) filters.push(`date_gte: "${seMinDate}"`);
-                    if (seMaxDate) filters.push(`date_lte: "${seMaxDate}"`); 
-                    break;
-                case 'sponsoringEvents':
-                    // --- NEW AMOUNT FILTERS ---
-                    const speMinAmount = getWeiValue('sponsoringEventMinAmount');
-                    const speMaxAmount = getWeiValue('sponsoringEventMaxAmount');
-
-                    const seSponsor = safeGetElementValue('sponsoringEventSponsorFilter');
-                    const seSponsorship_sponsoring = safeGetElementValue('sponsoringEventSponsorshipFilter');
-                    const seMinDate_sponsoring = getTimestampValue('sponsoringEventMinDate');
-                    const seMaxDate_sponsoring = getTimestampValue('sponsoringEventMaxDate'); 
-
-                    if (speMinAmount) filters.push(`amount_gte: "${speMinAmount}"`);
-                    if (speMaxAmount) filters.push(`amount_lte: "${speMaxAmount}"`);
-
-                    if (seSponsor) filters.push(`sponsor: "${seSponsor.toLowerCase()}"`);
-                    if (seSponsorship_sponsoring) filters.push(`sponsorship: "${seSponsorship_sponsoring.toLowerCase()}"`);
-                    if (seMinDate_sponsoring) filters.push(`date_gte: "${seMinDate_sponsoring}"`);
-                    if (seMaxDate_sponsoring) filters.push(`date_lte: "${seMaxDate_sponsoring}"`); 
-                    break;
-                case 'sponsorshipDailyBuckets':
-                    const sdbSponsorship = safeGetElementValue('dailyBucketSponsorshipFilter');
-                    const sdbMinApy = safeGetElementValue('dailyBucketMinApy');
-                    const sdbMinDate = getTimestampValue('dailyBucketMinDate');
-                    const sdbMaxDate = getTimestampValue('dailyBucketMaxDate'); 
-
-                    if (sdbSponsorship) filters.push(`sponsorship: "${sdbSponsorship.toLowerCase()}"`);
-                    if (sdbMinApy) filters.push(`spotAPY_gte: "${sdbMinApy}"`);
-                    if (sdbMinDate) filters.push(`date_gte: "${sdbMinDate}"`);
-                    if (sdbMaxDate) filters.push(`date_lte: "${sdbMaxDate}"`); 
-                    break;
-                case 'operatorDailyBuckets':
-                    const odbOperator = safeGetElementValue('operatorDailyOperatorFilter');
-                    const odbMinDate = getTimestampValue('operatorDailyMinDate');
-                    const odbMaxDate = getTimestampValue('operatorDailyMaxDate'); 
-                    
-                    // Convert DATA to Wei for filtering
-                    const minProfits = getWeiValue('operatorDailyMinProfits');
-                    const maxLosses = getWeiValue('operatorDailyMaxLosses');
-
-                    if (odbOperator) filters.push(`operator: "${odbOperator.toLowerCase()}"`);
-                    if (odbMinDate) filters.push(`date_gte: "${odbMinDate}"`);
-                    if (odbMaxDate) filters.push(`date_lte: "${odbMaxDate}"`); 
-                    if (minProfits) filters.push(`profitsWei_gte: "${minProfits}"`); // Use converted Wei value
-                    if (maxLosses) filters.push(`lossesWei_lte: "${maxLosses}"`); // Use converted Wei value
-                    break;
-                case 'nodes': // NEW: Node Filters
-                    const nodeId = safeGetElementValue('nodeIdFilter');
-                    const nodeMetadata = safeGetElementValue('nodeMetadataFilter');
-                    const nodeMinLastSeen = getTimestampValue('nodeMinLastSeenDate');
-                    const nodeMaxLastSeen = getTimestampValue('nodeMaxLastSeenDate');
-                    
-                    if (nodeId) filters.push(`id_contains: "${nodeId.toLowerCase()}"`);
-                    if (nodeMetadata) filters.push(`metadata_contains_nocase: "${nodeMetadata.toLowerCase()}"`);
-                    if (nodeMinLastSeen) filters.push(`lastSeen_gte: "${nodeMinLastSeen}"`);
-                    if (nodeMaxLastSeen) filters.push(`lastSeen_lte: "${nodeMaxLastSeen}"`);
-                    break;
-                default:
-                    break;
-            }
-
-            return filters.length > 0 ? filters.join(', ') : '';
+                        break;
+                        
+                    case 'datetime':
+                        const timestamp = dateToTimestamp(rawValue);
+                        if (timestamp) {
+                            filterString = `${filter.field}: "${timestamp}"`;
+                        }
+                        break;
+                        
+                    case 'boolean':
+                        if (rawValue === 'true' || rawValue === 'false') {
+                            filterString = `${filter.field}: ${rawValue}`;
+                        }
+                        break;
+                        
+                    default:
+                        filterString = `${filter.field}: "${processedValue}"`;
+                }
+                
+                if (filterString) {
+                    filters.push(filterString);
+                }
+            });
+            
+            return filters.join(', ');
         }
         
         /**
-         * Generates the auto-completed GraphQL query from form fields.
+         * Generates the auto-completed GraphQL query from form fields using ENTITY_CONFIG.
          */
         function getAutoGeneratedQuery() {
              const entityName = document.getElementById('entityName').value;
-             const queryLimit = parseInt(document.getElementById('queryLimit').value);
-             const querySkip = parseInt(document.getElementById('querySkip').value); // NEW: Get skip offset
+             const config = ENTITY_CONFIG[entityName];
+             
+             if (!config) {
+                 return `# Unknown entity: ${entityName}`;
+             }
+             
+             const queryLimit = parseInt(document.getElementById('queryLimit').value) || 10;
+             const querySkip = parseInt(document.getElementById('querySkip').value) || 0;
              const orderByField = document.getElementById('orderByField').value;
              const orderDirection = document.getElementById('orderDirection').value;
              const filterContents = getFilterWhereClause(entityName);
              
              let query;
              
-             // Define common args array
-             let argsArray = [
-                 `first: ${queryLimit}`,
-                 `skip: ${querySkip}`, // NEW: Add skip argument
-                 `orderBy: ${orderByField}`,
-                 `orderDirection: ${orderDirection}`
-             ];
-
-             // Special logic for Delegator (single ID query)
-             if (entityName === 'delegators') {
-                 // The delegator query ignores limit and ordering on the root field, only requires ID.
-                 const delegatorId = document.getElementById('delegatorIdFilter').value.trim() || '0x000000000000000000000000000000000000dead';
-                 
+             // Handle _meta query (special no-argument query)
+             if (config.queryType === 'meta') {
                  query = `
-                     query GetDelegatorDetailsSimplified {
-                         delegator(id: "${delegatorId.toLowerCase()}", subgraphError: allow) {
-                             id
-                             cumulativeEarningsWei
-                             numberOfDelegations
-                             totalValueDataWei
-                             queueEntries { id operator { id } }
-                             delegations(
-                                 first: 10
-                                 orderBy: id
-                                 orderDirection: asc
-                             ) {
-                                 id
-                                 operator { id }
-                                 _valueDataWei
-                                 latestDelegationTimestamp
-                                 operatorTokenBalanceWei
-                                 isSelfDelegation
+query GetSubgraphMeta {
+    _meta {
+        ${config.fields}
+    }
+}
+                 `;
+             }
+             // Handle single entity queries (like 'network')
+             else if (config.queryType === 'single') {
+                 // For single queries, we need an ID from filters
+                 let idFilter = '';
+                 if (config.filters && config.filters.length > 0) {
+                     config.filters.forEach(filter => {
+                         const el = document.getElementById(filter.id);
+                         if (el && el.value.trim()) {
+                             if (filter.field === 'id') {
+                                 idFilter = el.value.trim().toLowerCase();
                              }
                          }
+                     });
+                     
+                     // Use default ID if none provided
+                     if (!idFilter && config.filters.some(f => f.defaultValue)) {
+                         const defaultFilter = config.filters.find(f => f.defaultValue);
+                         idFilter = defaultFilter.defaultValue;
                      }
-                 `;
+                 }
+                 
+                 // Build the query with or without ID parameter
+                 if (config.singleIdRequired && idFilter) {
+                     query = `
+query Get${config.label.replace(/[\s()]/g, '')} {
+    ${config.singularQuery}(id: "${idFilter}", subgraphError: allow) {
+        ${config.fields}
+    }
+}
+                     `;
+                 } else if (!config.singleIdRequired) {
+                     query = `
+query Get${config.label.replace(/[\s()]/g, '')} {
+    ${config.singularQuery} {
+        ${config.fields}
+    }
+}
+                     `;
+                 } else {
+                     query = `
+# Please provide an ID in the filter to query ${config.label}
+query Get${config.label.replace(/[\s()]/g, '')} {
+    ${config.singularQuery}(id: "YOUR_ID_HERE", subgraphError: allow) {
+        ${config.fields}
+    }
+}
+                     `;
+                 }
              } else {
                  // Standard list query
-                 const fields = getQueryFields(entityName);
+                 let argsArray = [
+                     `first: ${queryLimit}`,
+                     `skip: ${querySkip}`,
+                     `orderBy: ${orderByField}`,
+                     `orderDirection: ${orderDirection}`
+                 ];
 
                  if (filterContents) {
                      argsArray.push(`where: {${filterContents}}`);
@@ -1276,15 +1777,15 @@
                  argsArray.push(`subgraphError: allow`);
                  const args = argsArray.join(', ');
 
-
                  query = `
-                     query GetEntities {
-                         ${entityName}(${args}) {
-                             ${fields}
-                         }
-                     }
+query Get${config.label.replace(/[\s()]/g, '')}s {
+    ${entityName}(${args}) {
+        ${config.fields}
+    }
+}
                  `;
              }
+             
              return query;
         }
 
@@ -1316,43 +1817,71 @@
         // --- GraphQL Query Logic ---
 
         /**
-         * Helper function to retrieve the fields for a given entity type.
+         * Helper function to retrieve the fields for a given entity type from ENTITY_CONFIG.
          */
         function getQueryFields(entityName) {
-            switch (entityName) {
-                case 'streams':
-                    return `id idAsString metadata createdAt updatedAt permissions { id userId canEdit canGrant } storageNodes { id }`;
-                case 'sponsorships':
-                    return `id creator totalPayoutWeiPerSec remainingWei spotAPY operatorCount stream { id } minOperators isRunning`;
-                case 'operators':
-                    // **CORRECTED FIELDS:** Include metadataJsonString, nodes, and contractVersion
-                    return `id delegatorCount totalStakeInSponsorshipsWei valueWithoutEarnings operatorsCutFraction owner cumulativeProfitsWei cumulativeEarningsWei metadataJsonString nodes contractVersion`;
-                case 'stakes':
-                    // **CORRECTED FIELDS:** Ensure nested operator details include metadata fields
-                    return `id sponsorship { id stream { idAsString } spotAPY } operator { id owner operatorsCutFraction metadataJsonString } amountWei lockedWei earningsWei joinTimestamp`;
-                case 'delegations':
-                    return `id delegator { id } operator { id } _valueDataWei latestDelegationTimestamp isSelfDelegation`;
-                case 'stakingEvents':
-                    // **CORRECTED FIELDS:** Ensure nested operator details include metadata fields
-                    return `id amount date operator { id owner operatorsCutFraction metadataJsonString } sponsorship { id stream { idAsString } spotAPY }`;
-                case 'sponsoringEvents':
-                    return `id sponsor sponsorship { id stream { idAsString } spotAPY } amount date`;
-                case 'sponsorshipDailyBuckets':
-                    return `id date totalStakedWei remainingWei spotAPY operatorCount`;
-                case 'operatorDailyBuckets':
-                    // **CORRECTED FIELDS:** Ensure nested operator details include metadata fields
-                    return `id date cumulativeEarningsWei dataTokenBalanceWei delegatorCountAtStart delegatorCountChange lossesWei operatorsCutWei profitsWei totalDelegatedWei totalStakeInSponsorshipsWei totalUndelegatedWei valueWithoutEarnings operator { id metadataJsonString nodes }`;
-                case 'nodes': // NEW: Node Fields
-                    return `
-                        id
-                        createdAt
-                        lastSeen
-                        metadata
-                        storedStreams(first: 10) { id stream { idAsString } }
-                    `;
-                default:
-                    return `id`;
-            }
+            const config = ENTITY_CONFIG[entityName];
+            return config ? config.fields : 'id';
+        }
+
+        /**
+         * Populates the entity dropdown with all entities grouped by category.
+         */
+        function populateEntityDropdown() {
+            const select = document.getElementById('entityName');
+            select.innerHTML = '';
+            
+            // Category icons for better visual organization
+            const categoryIcons = {
+                'Staking': '💰',
+                'Events': '📊',
+                'Governance': '🗳️',
+                'Data': '📡',
+                'Network': '🌐',
+                'Metrics': '📈',
+                'Marketplace': '🏪'
+            };
+            
+            // Group entities by category
+            const categories = {};
+            Object.entries(ENTITY_CONFIG).forEach(([key, config]) => {
+                if (!categories[config.category]) {
+                    categories[config.category] = [];
+                }
+                categories[config.category].push({ key, ...config });
+            });
+            
+            // Create optgroups for each category
+            const categoryOrder = ['Staking', 'Events', 'Governance', 'Data', 'Network', 'Metrics', 'Marketplace'];
+            
+            // Count total entities
+            const totalEntities = Object.keys(ENTITY_CONFIG).length;
+            console.log(`📋 Streamr Explorer: ${totalEntities} entities available across ${categoryOrder.length} categories`);
+            
+            categoryOrder.forEach(category => {
+                if (categories[category]) {
+                    const optgroup = document.createElement('optgroup');
+                    const icon = categoryIcons[category] || '📁';
+                    optgroup.label = `${icon} ${category} (${categories[category].length})`;
+                    
+                    categories[category].forEach(entity => {
+                        const option = document.createElement('option');
+                        option.value = entity.key;
+                        // Add query type indicator
+                        let suffix = '';
+                        if (entity.queryType === 'single') suffix = ' ⚡';
+                        else if (entity.queryType === 'meta') suffix = ' ℹ️';
+                        option.textContent = `${entity.label}${suffix}`;
+                        option.title = entity.description;
+                        optgroup.appendChild(option);
+                    });
+                    
+                    select.appendChild(optgroup);
+                }
+            });
+            
+            // Set default selection
+            select.value = 'operators';
         }
 
         /**
@@ -1375,7 +1904,13 @@
             const endpointUrl = `${graphBaseUrl}${apiKey}/subgraphs/id/${subgraphId}`;
             
             let query = rawQueryInput.value.trim(); 
-            let expectedEntityKey = entityName; 
+            const config = ENTITY_CONFIG[entityName];
+            let expectedEntityKey = entityName;
+            
+            // For single queries, use the singular query name
+            if (config && config.queryType === 'single') {
+                expectedEntityKey = config.singularQuery;
+            }
 
             if (!query) {
                 errorAlert.textContent = 'The query field cannot be empty.';
@@ -1383,8 +1918,8 @@
                 return;
             }
 
-            // Try to deduce the main key for delegators or raw mode
-            if (entityName === 'delegators' || isManualOverride) {
+            // Try to deduce the main key for manual override mode
+            if (isManualOverride) {
                 const match = query.match(/\{[\s\n]*(\w+)(?:\s|\()/i);
                 expectedEntityKey = match ? match[1] : entityName;
             }
@@ -1557,16 +2092,15 @@
                 document.getElementById('executeButton').disabled = false;
             });
             
-            // Initialize filters with the default entity ('streams')
-            document.getElementById('entityName').value = 'stakingEvents'; // Set default entity to Staking Event
+            // Populate entity dropdown with categories
+            populateEntityDropdown();
+            
+            // Initialize filters with the default entity
             updateFilterInputs();
 
-            // Note: CheckInputs now reads from the hidden fields, which are populated on load by their default value.
-            
             // Call the initial query on load (if inputs are valid)
             setTimeout(() => {
                 checkInputs();
-                // updateFilterInputs() calls updateRawQueryPreview(), which fills the field.
                 if (!document.getElementById('executeButton').disabled) {
                     executeQuery();
                 }
