@@ -1,0 +1,16 @@
+{
+  "name": "streamr-subgraph-explorer",
+  "version": "1.0.0",
+  "description": "Streamr Subgraph Explorer",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i src/input.css -o styles.css --minify",
+    "watch:css": "tailwindcss -i src/input.css -o styles.css --watch",
+    "dev": "npx serve -l 5500"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.17",
+    "tailwindcss": "^4.1.17"
+  }
+}
