@@ -289,7 +289,7 @@
                 description: 'Data streams on the Streamr network - includes permissions, storage nodes and sponsorships',
                 fields: `id idAsString metadata createdAt updatedAt 
                     permissions(first: 10) { id userId userAddress canEdit canDelete canGrant publishExpiration subscribeExpiration } 
-                    storageNodes(first: 5) { id node { id metadata lastSeen } } 
+                    storageNodes(first: 5) { id metadata lastSeen } 
                     sponsorships(first: 5) { id spotAPY totalStakedWei remainingWei isRunning operatorCount }`,
                 sortFields: [
                     { value: 'id', label: 'ID (Address/Path)' },
@@ -301,10 +301,9 @@
                 filters: [
                     { id: 'streamIdFilter', field: 'idAsString_contains_nocase', label: 'Stream ID Contains', type: 'text', placeholder: 'Ex: streamr-dev/my-stream' },
                     { id: 'streamIdExact', field: 'id', label: 'Stream ID (Exact)', type: 'text', placeholder: 'Full stream ID' },
-                    { id: 'streamIdStartsWith', field: 'idAsString_starts_with', label: 'Stream ID Starts With', type: 'text', placeholder: '0x...' },
+                    { id: 'streamIdStartsWith', field: 'idAsString_starts_with', label: 'Stream ID Starts With (e.g. creator address)', type: 'text', placeholder: '0x...' },
                     { id: 'streamMetadataFilter', field: 'metadata_contains_nocase', label: 'Metadata Contains', type: 'text', placeholder: "Ex: 'sensor-data'" },
-                    { id: 'streamMetadataNotNull', field: 'metadata_not', label: 'Has Metadata (not empty)', type: 'text', placeholder: '' },
-                    { id: 'streamCreatorFilter', field: 'creator', label: 'Creator Address', type: 'address', placeholder: '0x...' },
+                    { id: 'streamMetadataNotNull', field: 'metadata_not', label: 'Has Metadata (not empty)', type: 'toggle', value: '""' },
                     { id: 'streamMinCreatedAt', field: 'createdAt_gte', label: 'Created After', type: 'datetime' },
                     { id: 'streamMaxCreatedAt', field: 'createdAt_lte', label: 'Created Before', type: 'datetime' },
                     { id: 'streamMinUpdatedAt', field: 'updatedAt_gte', label: 'Updated After', type: 'datetime' },
@@ -329,8 +328,8 @@
                 filters: [
                     { id: 'permUserAddress', field: 'userAddress', label: 'User Address', type: 'address', placeholder: '0x...' },
                     { id: 'permUserAddressContains', field: 'userAddress_contains', label: 'User Address Contains', type: 'text', placeholder: '0x...' },
-                    { id: 'permUserId', field: 'userId', label: 'User ID', type: 'text', placeholder: 'User ID' },
-                    { id: 'permUserIdContains', field: 'userId_contains_nocase', label: 'User ID Contains', type: 'text', placeholder: 'user' },
+                    { id: 'permUserId', field: 'userId', label: 'User ID', type: 'address', placeholder: '0x...' },
+                    { id: 'permUserIdContains', field: 'userId_contains', label: 'User ID Contains', type: 'address', placeholder: '0x...' },
                     { id: 'permStreamId', field: 'stream', label: 'Stream ID', type: 'text', placeholder: 'Stream address/path' },
                     { id: 'permStreamContains', field: 'stream_contains', label: 'Stream ID Contains', type: 'text', placeholder: 'stream' },
                     { id: 'permCanEdit', field: 'canEdit', label: 'Can Edit', type: 'boolean' },
@@ -340,8 +339,8 @@
                     { id: 'permMaxPublishExp', field: 'publishExpiration_lte', label: 'Publish Expires Before', type: 'datetime' },
                     { id: 'permMinSubscribeExp', field: 'subscribeExpiration_gte', label: 'Subscribe Expires After', type: 'datetime' },
                     { id: 'permMaxSubscribeExp', field: 'subscribeExpiration_lte', label: 'Subscribe Expires Before', type: 'datetime' },
-                    { id: 'permHasPublish', field: 'publishExpiration_gt', label: 'Has Publish Permission (exp > 0)', type: 'number', placeholder: '0' },
-                    { id: 'permHasSubscribe', field: 'subscribeExpiration_gt', label: 'Has Subscribe Permission (exp > 0)', type: 'number', placeholder: '0' },
+                    { id: 'permHasPublish', field: 'publishExpiration_gt', label: 'Has Publish Permission (exp > 0)', type: 'toggle', value: '"0"' },
+                    { id: 'permHasSubscribe', field: 'subscribeExpiration_gt', label: 'Has Subscribe Permission (exp > 0)', type: 'toggle', value: '"0"' },
                 ],
             },
             // ─────────────────────────────────────────────────
@@ -376,7 +375,6 @@
                 defaultSort: { field: 'spotAPY', direction: 'desc' },
                 filters: [
                     { id: 'sponsorshipIdFilter', field: 'id', label: 'Sponsorship Address', type: 'address', placeholder: '0x...' },
-                    { id: 'sponsorshipIdContains', field: 'id_contains', label: 'Address Contains', type: 'text', placeholder: '0x...' },
                     { id: 'sponsorshipCreatorFilter', field: 'creator', label: 'Creator Address', type: 'address', placeholder: '0x...' },
                     { id: 'sponsorshipCreatorContains', field: 'creator_contains', label: 'Creator Contains', type: 'text', placeholder: '0x...' },
                     { id: 'sponsorshipStreamFilter', field: 'stream', label: 'Stream ID', type: 'text', placeholder: 'Stream address' },
@@ -392,7 +390,7 @@
                     { id: 'sponsorshipMinTotalStaked', field: 'totalStakedWei_gte', label: 'Min Total Staked (DATA)', type: 'wei', placeholder: '1000' },
                     { id: 'sponsorshipMaxTotalStaked', field: 'totalStakedWei_lte', label: 'Max Total Staked (DATA)', type: 'wei', placeholder: '1000000' },
                     { id: 'sponsorshipMinCumulative', field: 'cumulativeSponsoring_gte', label: 'Min Cumulative Sponsoring (DATA)', type: 'wei', placeholder: '100' },
-                    { id: 'sponsorshipMinPayout', field: 'totalPayoutWeiPerSec_gte', label: 'Min Payout/Sec (wei)', type: 'wei', placeholder: '1000000000000000' },
+                    { id: 'sponsorshipMinPayout', field: 'totalPayoutWeiPerSec_gte', label: 'Min Payout/Sec (DATA)', type: 'wei', placeholder: '0.001' },
                     { id: 'sponsorshipMinInsolvency', field: 'projectedInsolvency_gte', label: 'Insolvency After (timestamp)', type: 'datetime' },
                     { id: 'sponsorshipMaxInsolvency', field: 'projectedInsolvency_lte', label: 'Insolvency Before (timestamp)', type: 'datetime' },
                 ],
@@ -466,7 +464,6 @@
                 ],
                 defaultSort: { field: 'valueWithoutEarnings', direction: 'desc' },
                 filters: [
-                    { id: 'operatorIdFilter', field: 'id_contains', label: 'Address Contains', type: 'text', placeholder: '0x...' },
                     { id: 'operatorIdExact', field: 'id', label: 'Operator Address (Exact)', type: 'address', placeholder: '0x...' },
                     { id: 'operatorOwnerFilter', field: 'owner', label: 'Owner Address', type: 'address', placeholder: '0x...' },
                     { id: 'operatorOwnerContains', field: 'owner_contains', label: 'Owner Contains', type: 'text', placeholder: '0x...' },
@@ -556,9 +553,9 @@
                     { id: 'stakeMinLockedWei', field: 'lockedWei_gte', label: 'Min Locked (DATA)', type: 'wei', placeholder: '0' },
                     { id: 'stakeMinEarnings', field: 'earningsWei_gte', label: 'Min Earnings (DATA)', type: 'wei', placeholder: '1' },
                     { id: 'stakeMaxEarnings', field: 'earningsWei_lte', label: 'Max Earnings (DATA)', type: 'wei', placeholder: '10000' },
-                    { id: 'stakeMinJoinDate', field: 'joinTimestamp_gte', label: 'Joined After', type: 'datetime' },
-                    { id: 'stakeMaxJoinDate', field: 'joinTimestamp_lte', label: 'Joined Before', type: 'datetime' },
-                    { id: 'stakeMinUpdateDate', field: 'updateTimestamp_gte', label: 'Updated After', type: 'datetime' },
+                    { id: 'stakeMinJoinDate', field: 'joinTimestamp_gte', label: 'Joined After', type: 'datetime', valueType: 'Int' },
+                    { id: 'stakeMaxJoinDate', field: 'joinTimestamp_lte', label: 'Joined Before', type: 'datetime', valueType: 'Int' },
+                    { id: 'stakeMinUpdateDate', field: 'updateTimestamp_gte', label: 'Updated After', type: 'datetime', valueType: 'Int' },
                 ],
             },
             delegations: {
@@ -583,12 +580,12 @@
                     { id: 'delegationOperatorContains', field: 'operator_contains', label: 'Operator Contains', type: 'text', placeholder: '0x...' },
                     { id: 'delegationMinValueWei', field: '_valueDataWei_gte', label: 'Min Value (DATA)', type: 'wei', placeholder: '100' },
                     { id: 'delegationMaxValueWei', field: '_valueDataWei_lte', label: 'Max Value (DATA)', type: 'wei', placeholder: '100000' },
-                    { id: 'delegationMinTokenBalance', field: 'operatorTokenBalanceWei_gte', label: 'Min Token Balance (wei)', type: 'wei', placeholder: '1000000000000000000' },
+                    { id: 'delegationMinTokenBalance', field: 'operatorTokenBalanceWei_gte', label: 'Min Operator Token Balance', type: 'wei', placeholder: '1' },
                     { id: 'delegationIsSelf', field: 'isSelfDelegation', label: 'Self Delegation', type: 'boolean' },
-                    { id: 'delegationMinDelegationDate', field: 'latestDelegationTimestamp_gte', label: 'Delegated After', type: 'datetime' },
-                    { id: 'delegationMaxDelegationDate', field: 'latestDelegationTimestamp_lte', label: 'Delegated Before', type: 'datetime' },
-                    { id: 'delegationMinUndelegationDate', field: 'earliestUndelegationTimestamp_gte', label: 'Undelegation After', type: 'datetime' },
-                    { id: 'delegationHasUndelegation', field: 'earliestUndelegationTimestamp_gt', label: 'Has Undelegation (timestamp > 0)', type: 'number', placeholder: '0' },
+                    { id: 'delegationMinDelegationDate', field: 'latestDelegationTimestamp_gte', label: 'Delegated After', type: 'datetime', valueType: 'Int' },
+                    { id: 'delegationMaxDelegationDate', field: 'latestDelegationTimestamp_lte', label: 'Delegated Before', type: 'datetime', valueType: 'Int' },
+                    { id: 'delegationMinUndelegationDate', field: 'earliestUndelegationTimestamp_gte', label: 'Undelegation After', type: 'datetime', valueType: 'Int' },
+                    { id: 'delegationHasUndelegation', field: 'earliestUndelegationTimestamp_gt', label: 'Has Undelegation Lock (timestamp > 0)', type: 'toggle', value: '0' },
                 ],
             },
             delegators: {
@@ -609,13 +606,12 @@
                 defaultSort: { field: 'totalValueDataWei', direction: 'desc' },
                 filters: [
                     { id: 'delegatorIdFilter', field: 'id', label: 'Delegator Address', type: 'address', placeholder: '0x...' },
-                    { id: 'delegatorIdContains', field: 'id_contains', label: 'Address Contains', type: 'text', placeholder: '0x...' },
                     { id: 'delegatorMinDelegations', field: 'numberOfDelegations_gte', label: 'Min Delegations', type: 'number', placeholder: '1' },
                     { id: 'delegatorMaxDelegations', field: 'numberOfDelegations_lte', label: 'Max Delegations', type: 'number', placeholder: '10' },
                     { id: 'delegatorMinValue', field: 'totalValueDataWei_gte', label: 'Min Total Value (DATA)', type: 'wei', placeholder: '100' },
                     { id: 'delegatorMaxValue', field: 'totalValueDataWei_lte', label: 'Max Total Value (DATA)', type: 'wei', placeholder: '1000000' },
                     { id: 'delegatorMinEarnings', field: 'cumulativeEarningsWei_gte', label: 'Min Cumulative Earnings (DATA)', type: 'wei', placeholder: '1' },
-                    { id: 'delegatorHasEarnings', field: 'cumulativeEarningsWei_gt', label: 'Has Earnings (>0)', type: 'number', placeholder: '0' },
+                    { id: 'delegatorHasEarnings', field: 'cumulativeEarningsWei_gt', label: 'Has Earnings (>0)', type: 'toggle', value: '"0"' },
                 ],
             },
             delegatorDailyBuckets: {
@@ -657,8 +653,7 @@
                 ],
                 defaultSort: { field: 'count', direction: 'desc' },
                 filters: [
-                    { id: 'pastDelegationIdFilter', field: 'id_contains', label: 'ID Contains', type: 'text', placeholder: 'ID pattern' },
-                    { id: 'pastDelegationIdExact', field: 'id', label: 'ID (Exact)', type: 'text', placeholder: 'exact-id' },
+                    { id: 'pastDelegationIdExact', field: 'id', label: 'ID (Exact)', type: 'text', placeholder: '0xoperator-0xdelegator' },
                     { id: 'pastDelegationMinCount', field: 'count_gte', label: 'Min Count', type: 'number', placeholder: '1' },
                     { id: 'pastDelegationMaxCount', field: 'count_lte', label: 'Max Count', type: 'number', placeholder: '100' },
                 ],
@@ -688,8 +683,8 @@
                     { id: 'stakingEventSponsorshipContains', field: 'sponsorship_contains', label: 'Sponsorship Contains', type: 'text', placeholder: '0x...' },
                     { id: 'stakingEventMinAmount', field: 'amount_gte', label: 'Min Amount (DATA) - positive=stake', type: 'wei', placeholder: '100' },
                     { id: 'stakingEventMaxAmount', field: 'amount_lte', label: 'Max Amount (DATA) - negative=unstake', type: 'wei', placeholder: '-100' },
-                    { id: 'stakingEventPositiveOnly', field: 'amount_gt', label: 'Stakes Only (amount > 0)', type: 'number', placeholder: '0' },
-                    { id: 'stakingEventNegativeOnly', field: 'amount_lt', label: 'Unstakes Only (amount < 0)', type: 'number', placeholder: '0' },
+                    { id: 'stakingEventPositiveOnly', field: 'amount_gt', label: 'Stakes Only (amount > 0)', type: 'toggle', value: '"0"' },
+                    { id: 'stakingEventNegativeOnly', field: 'amount_lt', label: 'Unstakes Only (amount < 0)', type: 'toggle', value: '"0"' },
                     { id: 'stakingEventMinDate', field: 'date_gte', label: 'From Date', type: 'datetime' },
                     { id: 'stakingEventMaxDate', field: 'date_lte', label: 'To Date', type: 'datetime' },
                 ],
@@ -785,19 +780,19 @@
                     { id: 'flagFlaggerContains', field: 'flagger_contains', label: 'Flagger Contains', type: 'text', placeholder: '0x...' },
                     { id: 'flagSponsorshipFilter', field: 'sponsorship', label: 'Sponsorship Address', type: 'address', placeholder: '0x...' },
                     { id: 'flagSponsorshipContains', field: 'sponsorship_contains', label: 'Sponsorship Contains', type: 'text', placeholder: '0x...' },
-                    { id: 'flagResult', field: 'result', label: 'Result (kicked/not-kicked/waiting/voting)', type: 'text', placeholder: 'kicked' },
-                    { id: 'flagResultNotNull', field: 'result_not', label: 'Has Result (resolved)', type: 'text', placeholder: '' },
+                    { id: 'flagResult', field: 'result', label: 'Result', type: 'select', options: ['waiting', 'voting', 'kicked', 'failed'] },
+                    { id: 'flagResolved', field: 'result_in', label: 'Resolved (kicked or failed)', type: 'toggle', value: '["kicked", "failed"]' },
                     { id: 'flagMinStakeAtRisk', field: 'targetStakeAtRiskWei_gte', label: 'Min Stake at Risk (DATA)', type: 'wei', placeholder: '1000' },
                     { id: 'flagMaxStakeAtRisk', field: 'targetStakeAtRiskWei_lte', label: 'Max Stake at Risk (DATA)', type: 'wei', placeholder: '100000' },
-                    { id: 'flagMinDate', field: 'flaggingTimestamp_gte', label: 'Flagged After', type: 'datetime' },
-                    { id: 'flagMaxDate', field: 'flaggingTimestamp_lte', label: 'Flagged Before', type: 'datetime' },
-                    { id: 'flagMinResolution', field: 'flagResolutionTimestamp_gte', label: 'Resolved After', type: 'datetime' },
-                    { id: 'flagMaxResolution', field: 'flagResolutionTimestamp_lte', label: 'Resolved Before', type: 'datetime' },
+                    { id: 'flagMinDate', field: 'flaggingTimestamp_gte', label: 'Flagged After', type: 'datetime', valueType: 'Int' },
+                    { id: 'flagMaxDate', field: 'flaggingTimestamp_lte', label: 'Flagged Before', type: 'datetime', valueType: 'Int' },
+                    { id: 'flagMinResolution', field: 'flagResolutionTimestamp_gte', label: 'Resolved After', type: 'datetime', valueType: 'Int' },
+                    { id: 'flagMaxResolution', field: 'flagResolutionTimestamp_lte', label: 'Resolved Before', type: 'datetime', valueType: 'Int' },
                     { id: 'flagMinVotesFor', field: 'votesForKick_gte', label: 'Min Votes For Kick', type: 'number', placeholder: '1' },
                     { id: 'flagMinVotesAgainst', field: 'votesAgainstKick_gte', label: 'Min Votes Against Kick', type: 'number', placeholder: '1' },
                     { id: 'flagMinReviewers', field: 'reviewerCount_gte', label: 'Min Reviewers', type: 'number', placeholder: '1' },
-                    { id: 'flagVoteStartAfter', field: 'voteStartTimestamp_gte', label: 'Vote Started After', type: 'datetime' },
-                    { id: 'flagVoteEndBefore', field: 'voteEndTimestamp_lte', label: 'Vote Ends Before', type: 'datetime' },
+                    { id: 'flagVoteStartAfter', field: 'voteStartTimestamp_gte', label: 'Vote Started After', type: 'datetime', valueType: 'Int' },
+                    { id: 'flagVoteEndBefore', field: 'voteEndTimestamp_lte', label: 'Vote Ends Before', type: 'datetime', valueType: 'Int' },
                 ],
             },
             votes: {
@@ -825,8 +820,8 @@
                     { id: 'voteVotedKick', field: 'votedKick', label: 'Voted to Kick', type: 'boolean' },
                     { id: 'voteMinWeight', field: 'voterWeight_gte', label: 'Min Voter Weight (DATA)', type: 'wei', placeholder: '1000' },
                     { id: 'voteMaxWeight', field: 'voterWeight_lte', label: 'Max Voter Weight (DATA)', type: 'wei', placeholder: '1000000' },
-                    { id: 'voteMinDate', field: 'timestamp_gte', label: 'Voted After', type: 'datetime' },
-                    { id: 'voteMaxDate', field: 'timestamp_lte', label: 'Voted Before', type: 'datetime' },
+                    { id: 'voteMinDate', field: 'timestamp_gte', label: 'Voted After', type: 'datetime', valueType: 'Int' },
+                    { id: 'voteMaxDate', field: 'timestamp_lte', label: 'Voted Before', type: 'datetime', valueType: 'Int' },
                 ],
             },
             // ─────────────────────────────────────────────────
@@ -857,7 +852,7 @@
                     { id: 'queueMaxAmount', field: 'amount_lte', label: 'Max Amount (DATA)', type: 'wei', placeholder: '100000' },
                     { id: 'queueMinDate', field: 'date_gte', label: 'Queued After', type: 'datetime' },
                     { id: 'queueMaxDate', field: 'date_lte', label: 'Queued Before', type: 'datetime' },
-                    { id: 'queueIdContains', field: 'id_contains', label: 'Queue ID Contains', type: 'text', placeholder: 'id pattern' },
+                    { id: 'queueIdExact', field: 'id', label: 'Queue Entry ID (Exact)', type: 'text', placeholder: '0xoperator-index' },
                 ],
             },
             nodes: {
@@ -866,7 +861,7 @@
                 queryType: 'list',
                 singularQuery: 'node',
                 description: 'Storage/broker nodes on the network - includes stored streams and activity tracking',
-                fields: 'id metadata lastSeen createdAt storedStreams(first: 15) { id stream { id idAsString metadata } }',
+                fields: 'id metadata lastSeen createdAt storedStreams(first: 15) { id idAsString metadata }',
                 sortFields: [
                     { value: 'id', label: 'ID (Address)' },
                     { value: 'lastSeen', label: 'Last Seen' },
@@ -874,15 +869,13 @@
                 ],
                 defaultSort: { field: 'lastSeen', direction: 'desc' },
                 filters: [
-                    { id: 'nodeIdFilter', field: 'id_contains', label: 'Node Address Contains', type: 'text', placeholder: '0x...' },
                     { id: 'nodeIdExact', field: 'id', label: 'Node Address (Exact)', type: 'address', placeholder: '0x...' },
                     { id: 'nodeMetadataFilter', field: 'metadata_contains_nocase', label: 'Metadata Contains', type: 'text', placeholder: 'version info' },
-                    { id: 'nodeMetadataNotEmpty', field: 'metadata_not', label: 'Has Metadata (not empty)', type: 'text', placeholder: '' },
+                    { id: 'nodeMetadataNotEmpty', field: 'metadata_not', label: 'Has Metadata (not empty)', type: 'toggle', value: '""' },
                     { id: 'nodeMinLastSeenDate', field: 'lastSeen_gte', label: 'Last Seen After', type: 'datetime' },
                     { id: 'nodeMaxLastSeenDate', field: 'lastSeen_lte', label: 'Last Seen Before', type: 'datetime' },
                     { id: 'nodeMinCreatedAt', field: 'createdAt_gte', label: 'Created After', type: 'datetime' },
                     { id: 'nodeMaxCreatedAt', field: 'createdAt_lte', label: 'Created Before', type: 'datetime' },
-                    { id: 'nodeActiveRecently', field: 'lastSeen_gt', label: 'Active Since (timestamp)', type: 'number', placeholder: 'Unix timestamp' },
                 ],
             },
             networks: {
@@ -907,8 +900,7 @@
                 ],
                 defaultSort: { field: 'id', direction: 'asc' },
                 filters: [
-                    { id: 'networksIdFilter', field: 'id_contains', label: 'Network ID Contains', type: 'text', placeholder: 'streamr' },
-                    { id: 'networksIdExact', field: 'id', label: 'Network ID (Exact)', type: 'text', placeholder: 'streamr' },
+                    { id: 'networksIdExact', field: 'id', label: 'Network ID (StreamrConfig address)', type: 'address', placeholder: '0x...' },
                     { id: 'networksMinStake', field: 'totalStake_gte', label: 'Min Total Stake (DATA)', type: 'wei', placeholder: '1000000' },
                     { id: 'networksMinOperators', field: 'operatorsCount_gte', label: 'Min Operators', type: 'number', placeholder: '10' },
                     { id: 'networksMinSponsorships', field: 'sponsorshipsCount_gte', label: 'Min Sponsorships', type: 'number', placeholder: '5' },
@@ -935,9 +927,11 @@
                 sortFields: [],
                 defaultSort: { field: 'id', direction: 'asc' },
                 filters: [
-                    { id: 'networkIdFilter', field: 'id', label: 'Network ID', type: 'text', placeholder: 'streamr', defaultValue: 'streamr' },
+                    { id: 'networkIdFilter', field: 'id', label: 'Network ID (StreamrConfig address, empty = first)', type: 'address', placeholder: '0x...' },
                 ],
                 singleIdRequired: true,
+                // Without an ID, fall back to the list query and take the first result
+                listFallback: 'networks',
             },
             // ─────────────────────────────────────────────────
             // PROJECTS (Marketplace)
@@ -949,7 +943,7 @@
                 singularQuery: 'project',
                 description: 'Marketplace projects with subscriptions, permissions and payment details',
                 fields: `id domainIds metadata isDataUnion createdAt updatedAt score stakedWei counter minimumSubscriptionSeconds 
-                    streams(first: 5) { id idAsString metadata } 
+                    streams 
                     permissions(first: 5) { id userAddress canBuy canEdit canDelete canGrant } 
                     paymentDetails(first: 3) { id domainId beneficiary pricingTokenAddress pricePerSecond } 
                     subscriptions(first: 5) { id userAddress endTimestamp } 
@@ -965,7 +959,6 @@
                 ],
                 defaultSort: { field: 'score', direction: 'desc' },
                 filters: [
-                    { id: 'projectIdFilter', field: 'id_contains', label: 'Project ID Contains', type: 'text', placeholder: 'project-id' },
                     { id: 'projectIdExact', field: 'id', label: 'Project ID (Exact)', type: 'text', placeholder: '0x...-project-id' },
                     { id: 'projectMetadata', field: 'metadata_contains_nocase', label: 'Metadata Contains', type: 'text', placeholder: 'search term' },
                     { id: 'projectIsDataUnion', field: 'isDataUnion', label: 'Is Data Union', type: 'boolean' },
@@ -1026,7 +1019,7 @@
                     { id: 'projSubProjectIdContains', field: 'project_contains', label: 'Project ID Contains', type: 'text', placeholder: 'project' },
                     { id: 'projSubMinEndDate', field: 'endTimestamp_gte', label: 'Expires After', type: 'datetime' },
                     { id: 'projSubMaxEndDate', field: 'endTimestamp_lte', label: 'Expires Before', type: 'datetime' },
-                    { id: 'projSubActiveOnly', field: 'endTimestamp_gt', label: 'Active After (timestamp)', type: 'number', placeholder: 'Current timestamp' },
+                    { id: 'projSubActiveOnly', field: 'endTimestamp_gt', label: 'Active Only (not expired)', type: 'toggle', value: () => `"${Math.floor(Date.now() / 1000)}"` },
                 ],
             },
             projectPurchases: {
@@ -1051,9 +1044,9 @@
                     { id: 'projPurchaseProjectContains', field: 'project_contains', label: 'Project ID Contains', type: 'text', placeholder: 'project' },
                     { id: 'projPurchaseMinDate', field: 'purchasedAt_gte', label: 'Purchased After', type: 'datetime' },
                     { id: 'projPurchaseMaxDate', field: 'purchasedAt_lte', label: 'Purchased Before', type: 'datetime' },
-                    { id: 'projPurchaseMinPrice', field: 'price_gte', label: 'Min Price (wei)', type: 'wei', placeholder: '1000000000000000000' },
-                    { id: 'projPurchaseMaxPrice', field: 'price_lte', label: 'Max Price (wei)', type: 'wei', placeholder: '100000000000000000000' },
-                    { id: 'projPurchaseMinFee', field: 'fee_gte', label: 'Min Fee (wei)', type: 'wei', placeholder: '0' },
+                    { id: 'projPurchaseMinPrice', field: 'price_gte', label: 'Min Price (tokens)', type: 'wei', placeholder: '1' },
+                    { id: 'projPurchaseMaxPrice', field: 'price_lte', label: 'Max Price (tokens)', type: 'wei', placeholder: '100' },
+                    { id: 'projPurchaseMinFee', field: 'fee_gte', label: 'Min Fee (tokens)', type: 'wei', placeholder: '0' },
                     { id: 'projPurchaseMinDuration', field: 'subscriptionSeconds_gte', label: 'Min Duration (sec)', type: 'number', placeholder: '86400' },
                     { id: 'projPurchaseMaxDuration', field: 'subscriptionSeconds_lte', label: 'Max Duration (sec)', type: 'number', placeholder: '31536000' },
                 ],
@@ -1110,7 +1103,7 @@
                     { id: 'projStakingBucketMinUnstakings', field: 'unstakingsWei_gte', label: 'Min Unstakings (DATA)', type: 'wei', placeholder: '100' },
                 ],
             },
-            projectPaymentDetails: {
+            projectPaymentDetails_collection: {
                 label: 'Project Payment Details',
                 category: 'Marketplace',
                 queryType: 'list',
@@ -1130,9 +1123,9 @@
                     { id: 'paymentBeneficiary', field: 'beneficiary', label: 'Beneficiary Address', type: 'address', placeholder: '0x...' },
                     { id: 'paymentBeneficiaryContains', field: 'beneficiary_contains', label: 'Beneficiary Contains', type: 'text', placeholder: '0x...' },
                     { id: 'paymentTokenAddress', field: 'pricingTokenAddress', label: 'Pricing Token Address', type: 'address', placeholder: '0x...' },
-                    { id: 'paymentDomainId', field: 'domainId', label: 'Domain ID', type: 'text', placeholder: '137' },
-                    { id: 'paymentMinPrice', field: 'pricePerSecond_gte', label: 'Min Price/Second (wei)', type: 'wei', placeholder: '0' },
-                    { id: 'paymentMaxPrice', field: 'pricePerSecond_lte', label: 'Max Price/Second (wei)', type: 'wei', placeholder: '1000000000000000' },
+                    { id: 'paymentDomainId', field: 'domainId', label: 'Domain ID', type: 'number', placeholder: '137' },
+                    { id: 'paymentMinPrice', field: 'pricePerSecond_gte', label: 'Min Price/Second (tokens)', type: 'wei', placeholder: '0' },
+                    { id: 'paymentMaxPrice', field: 'pricePerSecond_lte', label: 'Max Price/Second (tokens)', type: 'wei', placeholder: '0.001' },
                 ],
             },
             // ─────────────────────────────────────────────────
@@ -1331,7 +1324,10 @@
             if (!dataAmount) return null;
             try {
                 const DECIMAL_PLACES = 18;
-                const [integerPartStr, fractionalPartStr] = dataAmount.split('.').concat('');
+                // Keep the sign apart so negative decimals (e.g. -0.5) convert correctly
+                const isNegative = dataAmount.trim().startsWith('-');
+                const unsignedAmount = dataAmount.trim().replace(/^[-+]/, '');
+                const [integerPartStr, fractionalPartStr] = unsignedAmount.split('.').concat('');
                 
                 const integerPart = BigInt(integerPartStr || '0');
                 
@@ -1347,7 +1343,8 @@
                 // Convert the integer part to Wei and add the scaled fractional part
                 const integerWei = integerPart * (BigInt(10) ** BigInt(DECIMAL_PLACES));
                 
-                return (integerWei + fractionalWei).toString();
+                const totalWei = integerWei + fractionalWei;
+                return (isNegative ? -totalWei : totalWei).toString();
 
             } catch (e) {
                 // Return null if BigInt conversion fails (e.g., input contains non-numeric chars)
@@ -1432,6 +1429,9 @@
                 return;
             }
 
+            // Switching entity discards any manual edit of the previous entity's query
+            isManualOverride = false;
+
             // Update header with entity name and description
             document.getElementById('currentEntityFilter').innerHTML = `${config.label} <span class="text-xs text-gray-500 font-normal">(${config.category})</span>`;
             
@@ -1449,7 +1449,13 @@
             const defaultDirection = config.defaultSort?.direction || 'desc';
             document.getElementById('orderDirection').value = defaultDirection;
 
-            // --- 2. Handle Meta Query Type (like '_meta') ---
+            // --- 2. Pagination and sorting only apply to list queries ---
+            const isListQuery = config.queryType === 'list';
+            ['queryLimit', 'querySkip', 'orderByField', 'orderDirection'].forEach(id => {
+                document.getElementById(id).closest('div').classList.toggle('hidden', !isListQuery);
+            });
+
+            // --- 3. Handle Meta Query Type (like '_meta') ---
             if (config.queryType === 'meta') {
                 filterInputsContainer.innerHTML = `
                     <div class="col-span-full text-center py-4">
@@ -1464,21 +1470,7 @@
                 return;
             }
             
-            // --- 3. Handle Single Query Type (like 'network') ---
-            if (config.queryType === 'single') {
-                // Hide pagination for single queries
-                document.getElementById('queryLimit').closest('div').classList.add('hidden');
-                document.getElementById('querySkip').closest('div').classList.add('hidden');
-                document.getElementById('orderByField').closest('div').classList.add('hidden');
-                document.getElementById('orderDirection').closest('div').classList.add('hidden');
-            } else {
-                document.getElementById('queryLimit').closest('div').classList.remove('hidden');
-                document.getElementById('querySkip').closest('div').classList.remove('hidden');
-                document.getElementById('orderByField').closest('div').classList.remove('hidden');
-                document.getElementById('orderDirection').closest('div').classList.remove('hidden');
-            }
-
-            // --- 3. Generate Filter HTML Dynamically ---
+            // --- 4. Generate Filter HTML Dynamically ---
             if (!config.filters || config.filters.length === 0) {
                 filterInputsContainer.innerHTML = '<p class="text-gray-500 text-sm">No filters available for this entity.</p>';
                 updateRawQueryPreview();
@@ -1581,6 +1573,25 @@
                         </select>
                     `;
                     break;
+
+                case 'toggle':
+                    // Applies a fixed condition (filter.value) when set to "Yes"
+                    inputHtml = `
+                        <select id="${filter.id}" onchange="${onInputChange}" class="${baseInputClass}">
+                            <option value="">-- Any --</option>
+                            <option value="on">Yes</option>
+                        </select>
+                    `;
+                    break;
+
+                case 'select':
+                    inputHtml = `
+                        <select id="${filter.id}" onchange="${onInputChange}" class="${baseInputClass}">
+                            <option value="">-- Any --</option>
+                            ${filter.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                        </select>
+                    `;
+                    break;
                     
                 default:
                     inputHtml = `
@@ -1662,13 +1673,29 @@
                     case 'datetime':
                         const timestamp = dateToTimestamp(rawValue);
                         if (timestamp) {
-                            filterString = `${filter.field}: "${timestamp}"`;
+                            // Int fields must be sent as numbers, BigInt fields as strings
+                            filterString = filter.valueType === 'Int'
+                                ? `${filter.field}: ${timestamp}`
+                                : `${filter.field}: "${timestamp}"`;
                         }
                         break;
                         
                     case 'boolean':
                         if (rawValue === 'true' || rawValue === 'false') {
                             filterString = `${filter.field}: ${rawValue}`;
+                        }
+                        break;
+
+                    case 'toggle':
+                        if (rawValue === 'on') {
+                            const value = typeof filter.value === 'function' ? filter.value() : filter.value;
+                            filterString = `${filter.field}: ${value}`;
+                        }
+                        break;
+
+                    case 'select':
+                        if (filter.options.includes(rawValue)) {
+                            filterString = `${filter.field}: "${rawValue}"`;
                         }
                         break;
                         
@@ -1739,6 +1766,15 @@ query GetSubgraphMeta {
                      query = `
 query Get${config.label.replace(/[\s()]/g, '')} {
     ${config.singularQuery}(id: "${idFilter}", subgraphError: allow) {
+        ${config.fields}
+    }
+}
+                     `;
+                 } else if (config.listFallback) {
+                     query = `
+# No ID provided: returning the first ${config.label} from the list query
+query Get${config.label.replace(/[\s()]/g, '')} {
+    ${config.listFallback}(first: 1, subgraphError: allow) {
         ${config.fields}
     }
 }
@@ -1993,6 +2029,11 @@ query Get${config.label.replace(/[\s()]/g, '')}s {
                 // --- Determine Data Structure for Formatting ---
                 let dataToProcess;
 
+                // A single root field (e.g. a list fallback for a single query) is always the entity key
+                if (!isManualOverride && rawData && Object.keys(rawData).length === 1) {
+                    expectedEntityKey = Object.keys(rawData)[0];
+                }
+
                 if (Object.keys(rawData).length > 1 || isManualOverride) {
                     // Treat as multiple results or complex manual query; process all root fields
                     dataToProcess = rawData;
@@ -2032,8 +2073,12 @@ query Get${config.label.replace(/[\s()]/g, '')}s {
                                               obj[`${key}_formatted_date`] = formatTimestamp(obj[key]);
                                           }
                                      }
-                                     // Nested object recursion
-                                     if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+                                     // Nested object / list recursion
+                                     if (Array.isArray(obj[key])) {
+                                         obj[key].forEach(child => {
+                                             if (typeof child === 'object' && child !== null) recursiveProcessor(child);
+                                         });
+                                     } else if (typeof obj[key] === 'object' && obj[key] !== null) {
                                          recursiveProcessor(obj[key]);
                                      }
                                  }
