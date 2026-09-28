@@ -4,274 +4,241 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Streamr Subgraph Explorer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+    <link rel="shortcut icon" href="favicon/favicon.ico">
+    <meta name="theme-color" content="#00060A">
+
+    <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        /* Custom scrollbar for output area */
-        .scrollable-content {
-            max-height: 400px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-        /* Horizontal layout adjustments for medium+ screens */
-        @media (min-width: 768px) {
-            .scrollable-content {
-                max-height: calc(100vh - 280px);
-                min-height: 500px;
-            }
-        }
-        /* JSON output area */
-        #outputArea {
-            background-color: #000000;
-            color: #d4d4d4;
-        }
-        /* Ensure datetime-local input is styled consistently */
-        input[type="datetime-local"] {
-            color-scheme: dark;
-        }
-    </style>
 </head>
-<body class="bg-[#121212] p-4 sm:p-8 min-h-screen flex justify-center text-gray-200">
+<body class="text-gray-200">
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed bottom-4 left-4 z-[60] flex flex-col-reverse gap-3 pointer-events-none max-w-sm w-full"></div>
 
     <!-- SETTINGS MODAL -->
-    <div id="settingsModal" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center hidden">
-        <div class="bg-[#1E1E1E] rounded-lg p-6 w-11/12 md:w-1/2 max-w-lg border border-[#333333] shadow-2xl">
-            <h3 class="text-2xl font-bold text-white mb-4 flex justify-between items-center">
-                Settings
-                <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white transition-colors">&times;</button>
-            </h3>
-            
+    <div id="settingsModal" class="fixed inset-0 bg-black/75 flex items-center justify-center p-3 sm:p-4 z-50 hidden">
+        <div class="bg-[#1E1E1E] rounded-lg p-5 sm:p-8 max-w-md w-full text-gray-300 border border-[#333333] shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h2 class="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-white">Settings</h2>
             <div class="space-y-4">
-                <!-- Gateway Base URL -->
                 <div>
-                    <label for="modalGraphBaseUrl" class="block text-sm font-medium text-gray-400 mb-2">
-                        Gateway Base URL
-                    </label>
+                    <label for="modalGraphBaseUrl" class="block text-sm font-medium text-gray-400 mb-2">Gateway Base URL</label>
                     <input type="url" id="modalGraphBaseUrl" value="https://gateway-arbitrum.network.thegraph.com/api/"
-                           class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors"
+                           class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#555555]"
                            placeholder="The Graph Gateway Base URL">
                 </div>
-
-                <!-- API Key Input -->
                 <div>
-                    <label for="modalApiKey" class="block text-sm font-medium text-gray-400 mb-2">
-                        The Graph API Key
-                    </label>
+                    <label for="modalApiKey" class="block text-sm font-medium text-gray-400 mb-2"><a href="https://thegraph.com/studio/apikeys/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors underline underline-offset-2">The Graph</a> API Key</label>
                     <input type="text" id="modalApiKey" value="17529bf475dfe3e7b7a0551668c91c63"
-                           class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors"
-                           placeholder="Enter your The Graph API Key">
+                           class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#555555]"
+                           placeholder="Enter your The Graph API key">
                 </div>
-                
-                <!-- Subgraph ID Input -->
                 <div>
-                    <label for="modalSubgraphId" class="block text-sm font-medium text-gray-400 mb-2">
-                        Subgraph ID
-                    </label>
+                    <label for="modalSubgraphId" class="block text-sm font-medium text-gray-400 mb-2">Subgraph ID</label>
                     <input type="text" id="modalSubgraphId" value="EGWFdhhiWypDuz22Uy7b3F69E9MEkyfU9iAQMttkH5Rj"
-                           class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors"
+                           class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#555555]"
                            placeholder="Enter the Subgraph ID">
                 </div>
-
-                <div class="pt-4 flex gap-4">
-                    <button onclick="closeSettingsModal()" class="w-full bg-[#444444] hover:bg-[#555555] text-white font-bold py-3 px-4 rounded-lg transition-colors">
-                        Cancel
-                    </button>
-                    <button onclick="saveSettingsAndClose()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-lg transition-colors">
-                        Save & Update
-                    </button>
-                </div>
+            </div>
+            <div class="mt-6 flex gap-4">
+                <button onclick="closeSettingsModal()" class="w-full bg-[#444444] hover:bg-[#555555] text-white font-bold py-3 px-4 rounded-lg transition-colors">Cancel</button>
+                <button onclick="saveSettingsAndClose()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-lg transition-colors">Save & Update</button>
             </div>
         </div>
     </div>
     <!-- END MODAL -->
 
-    <div id="app" class="w-full max-w-[95vw] xl:max-w-[1800px]">
-        <!-- HEADER SECTION -->
-        <header class="text-center flex justify-between items-center mb-6">
-            <div class="flex-grow text-center">
-                <h1 class="text-4xl font-bold text-white mb-2">
-                    Streamr Subgraph Explorer
-                </h1>
-                <p class="text-lg text-gray-400">
-                    Query Streamr network entities via GraphQL on the Arbitrum Gateway.
-                </p>
-            </div>
-            
-            <!-- SETTINGS BUTTON -->
-            <button onclick="openSettingsModal()" class="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/5 flex-shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- HIDDEN API/SUBGRAPH INPUTS (USED BY JS) -->
+    <input type="hidden" id="graphBaseUrl" value="https://gateway-arbitrum.network.thegraph.com/api/">
+    <input type="hidden" id="apiKey" value="17529bf475dfe3e7b7a0551668c91c63">
+    <input type="hidden" id="subgraphId" value="EGWFdhhiWypDuz22Uy7b3F69E9MEkyfU9iAQMttkH5Rj">
+
+    <!-- ===== SIDEBAR (Desktop) ===== -->
+    <aside id="app-sidebar" class="hidden lg:flex flex-col fixed left-0 top-0 h-full w-72 bg-[#1A1A1A] border-r border-[#2a2a2a] z-40">
+        <!-- Logo -->
+        <div class="h-14 flex items-center px-5 border-b border-[#2a2a2a] flex-shrink-0">
+            <img src="favicon/favicon-96x96.png" alt="" class="w-9 h-9 flex-shrink-0 object-contain">
+            <span class="ml-3 text-lg font-bold text-white whitespace-nowrap">Subgraph Explorer</span>
+        </div>
+
+        <!-- Entity Navigation (populated by JS: populateEntityDropdown) -->
+        <nav id="entity-nav" class="flex-1 py-3 overflow-y-auto"></nav>
+
+        <!-- Bottom Section -->
+        <div class="border-t border-[#2a2a2a] p-2 flex-shrink-0">
+            <button onclick="openSettingsModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                <span class="text-sm font-medium">Settings</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ===== MOBILE HEADER ===== -->
+    <header id="mobile-header" class="lg:hidden fixed top-0 left-0 right-0 z-30 bg-[#121212]/95 backdrop-blur-md border-b border-[#2a2a2a] safe-area-top">
+        <div class="flex items-center justify-between px-4 h-14">
+            <div class="flex items-center gap-3 min-w-0">
+                <img src="favicon/favicon-96x96.png" alt="" class="w-8 h-8 flex-shrink-0">
+                <h1 class="text-lg font-bold text-white truncate">Subgraph Explorer</h1>
+            </div>
+            <button onclick="openSettingsModal()" class="p-2 rounded-lg bg-[#1E1E1E] border border-[#333] text-gray-400 hover:text-white transition-colors" title="Settings">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
             </button>
-        </header>
+        </div>
+    </header>
 
-        <!-- HORIZONTAL LAYOUT: Left (Query Config) | Right (Results) -->
-        <div class="flex flex-col md:flex-row gap-6">
-            
-            <!-- LEFT PANEL: Query Configuration -->
-            <div class="w-full md:w-1/2 xl:w-[45%] space-y-6 flex-shrink-0">
-                
-                <!-- QUERY CONFIGURATION CARD -->
-                <div class="bg-[#1E1E1E] rounded-lg p-5 sm:p-6 border border-[#333333] shadow-xl">
-            <h2 class="text-xl font-bold text-white mb-4">Query Configuration</h2>
-
-            <div class="space-y-4">
-
-                <!-- HIDDEN API/SUBGRAPH INPUTS (USED BY JS) -->
-                <input type="hidden" id="graphBaseUrl" value="https://gateway-arbitrum.network.thegraph.com/api/">
-                <input type="hidden" id="apiKey" value="17529bf475dfe3e7b7a0551668c91c63">
-                <input type="hidden" id="subgraphId" value="EGWFdhhiWypDuz22Uy7b3F69E9MEkyfU9iAQMttkH5Rj">
-
-
-                <div class="grid grid-cols-1 sm:grid-cols-5 gap-4">
-                    
-                    <!-- Entity Selector -->
-                    <div class="sm:col-span-2">
-                        <label for="entityName" class="block text-sm font-medium text-gray-400 mb-2">
-                            Entity to Query
-                        </label>
-                        <select id="entityName" onchange="updateFilterInputs(); updateRawQueryPreview();"
-                                class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors">
-                            <!-- Options will be populated by JavaScript -->
-                        </select>
-                    </div>
-
-                    <!-- Limit Input -->
-                    <div class="sm:col-span-1">
-                        <label for="queryLimit" class="block text-sm font-medium text-gray-400 mb-2">
-                            Results (Max 1000)
-                        </label>
-                        <input type="number" id="queryLimit" value="10" min="1" max="1000" oninput="updateRawQueryPreview()"
-                               class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors">
-                    </div>
-
-                    <!-- Offset (Skip) -->
-                    <div class="sm:col-span-1">
-                        <label for="querySkip" class="block text-sm font-medium text-gray-400 mb-2">
-                            Offset (Skip)
-                        </label>
-                        <input type="number" id="querySkip" value="0" min="0" oninput="updateRawQueryPreview(); checkPaginationButtons();"
-                               class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors">
-                    </div>
-
-                    <!-- Order By Field Selector -->
-                    <div class="sm:col-span-1">
-                        <label for="orderByField" class="block text-sm font-medium text-gray-400 mb-2">
-                            Order By
-                        </label>
-                        <select id="orderByField" onchange="updateRawQueryPreview();"
-                                class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors">
-                            <!-- Options populated by JS: updateFilterInputs() -->
-                        </select>
-                    </div>
-
-                    <!-- Order Direction Selector -->
-                    <div class="sm:col-span-1">
-                        <label for="orderDirection" class="block text-sm font-medium text-gray-400 mb-2">
-                            Order Direction
-                        </label>
-                        <select id="orderDirection" onchange="updateRawQueryPreview();"
-                                class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors">
-                            <option value="desc" selected>Descending (DESC)</option>
-                            <option value="asc">Ascending (ASC)</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Advanced Filters Container -->
-                <div id="advancedFiltersContainer" class="p-4 bg-[#2C2C2C] border border-[#333333] rounded-lg space-y-3">
-                    <h3 class="text-sm font-semibold text-white border-b border-[#333333] pb-2 mb-3">Advanced Filters (<span id="currentEntityFilter">Staking Event</span>)</h3>
-                    <div id="filterInputs">
-                        <!-- Filter inputs will be injected here via JavaScript -->
-                    </div>
-                </div>
-
-                <!-- Manual Query Field (Auto-populated) -->
-                <div id="rawQueryContainer">
-                    <label for="rawQueryInput" class="block text-sm font-medium text-gray-400 mb-2">
-                        GraphQL Query Preview/Edit (Manual Override)
-                    </label>
-                    <textarea id="rawQueryInput" rows="8" oninput="checkRawOverride()"
-                                 class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors"
-                                 placeholder="Paste your GraphQL query here or edit the preview."></textarea>
-                    <p id="manualOverrideHint" class="text-xs text-amber-500 mt-1 hidden">Manual Query Active: Form filters are ignored.</p>
-                </div>
-                
-                <!-- Execute Button and Pagination Controls -->
-                <div class="pt-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
-                    
-                    <!-- Pagination Buttons -->
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button id="prevPageButton" onclick="changePage(-1)" class="flex-grow sm:flex-grow-0 bg-[#444444] hover:bg-[#555555] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors" disabled>
-                            &larr; Previous
-                        </button>
-                        <button id="nextPageButton" onclick="changePage(1)" class="flex-grow sm:flex-grow-0 bg-[#444444] hover:bg-[#555555] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors" disabled>
-                            Next &rarr;
-                        </button>
-                    </div>
-
-                    <!-- Execute Button -->
-                    <button id="executeButton" onclick="executeQuery()" class="w-full sm:w-auto bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                        Execute Query
-                    </button>
-                </div>
+    <!-- ===== DESKTOP HEADER ===== -->
+    <header id="desktop-header" class="hidden lg:block fixed top-0 right-0 left-72 z-30 bg-[#121212]/95 backdrop-blur-md border-b border-[#2a2a2a]">
+        <div class="flex items-center justify-between px-6 h-14 w-full gap-4">
+            <div class="flex items-center gap-3 min-w-0">
+                <h1 id="desktop-page-title" class="text-lg font-semibold text-white whitespace-nowrap">Operators</h1>
+                <span id="desktop-page-category" class="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-widest text-gray-400 bg-[#1E1E1E] border border-[#333]"></span>
+                <p id="desktop-page-description" class="text-sm text-gray-500 truncate"></p>
+            </div>
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#1E1E1E] border border-[#333] flex-shrink-0">
+                <span class="text-xs text-gray-400">Gateway:</span>
+                <span class="text-sm font-bold text-green-400">The Graph</span>
             </div>
         </div>
-                
-            </div>
-            <!-- END LEFT PANEL -->
+    </header>
 
-            <!-- RIGHT PANEL: Results -->
-            <div class="w-full md:w-1/2 xl:w-[55%] md:sticky md:top-6 md:self-start">
-                
-                <!-- OUTPUT SECTION -->
-                <div class="bg-[#1E1E1E] rounded-lg p-5 sm:p-6 border border-[#333333] shadow-xl h-full">
-            <h2 class="text-xl font-bold text-white mb-4 flex justify-between items-center">
-                Query Result
-                <button id="copyButton" class="text-sm text-blue-400 hover:text-blue-300 font-medium hidden transition-colors" onclick="copyResults()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-1">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
-                    Copy JSON
-                </button>
-            </h2>
+    <!-- ===== MAIN CONTENT ===== -->
+    <div id="main-container" class="pt-16 pb-6 lg:pl-72">
+        <main class="p-4 md:p-6">
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
-            <!-- Loading/Error/Result Display -->
-            <div id="outputArea" class="border border-[#333333] rounded-lg p-4 text-sm scrollable-content min-h-[400px]">
-                <p class="text-gray-500">Waiting for query execution...</p>
-            </div>
-            
-            <p id="errorAlert" class="text-red-400 font-medium mt-4 hidden"></p>
+                <!-- LEFT: Query Configuration -->
+                <div class="xl:col-span-5 space-y-6">
+                    <section class="detail-section p-4 sm:p-6">
+                        <h2 class="text-lg font-semibold text-white mb-4">Query</h2>
+
+                        <div class="space-y-4">
+                            <!-- Entity Selector (mobile/tablet; the sidebar replaces it on desktop) -->
+                            <div class="lg:hidden">
+                                <label for="entityName" class="block text-xs font-medium text-gray-500 mb-1.5">Entity</label>
+                                <select id="entityName" onchange="selectEntity(this.value)"
+                                        class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all">
+                                    <!-- Options will be populated by JavaScript -->
+                                </select>
+                                <p id="mobile-page-description" class="text-xs text-gray-500 mt-1.5"></p>
+                            </div>
+
+                            <div class="grid grid-cols-2 2xl:grid-cols-4 gap-3">
+                                <!-- Limit Input -->
+                                <div>
+                                    <label for="queryLimit" class="block text-xs font-medium text-gray-500 mb-1.5">Limit (max 1000)</label>
+                                    <input type="number" id="queryLimit" value="10" min="1" max="1000" oninput="updateRawQueryPreview()"
+                                           class="w-full p-2.5 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all">
+                                </div>
+
+                                <!-- Offset (Skip) -->
+                                <div>
+                                    <label for="querySkip" class="block text-xs font-medium text-gray-500 mb-1.5">Offset (skip)</label>
+                                    <input type="number" id="querySkip" value="0" min="0" oninput="updateRawQueryPreview(); checkPaginationButtons();"
+                                           class="w-full p-2.5 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all">
+                                </div>
+
+                                <!-- Order By Field Selector -->
+                                <div>
+                                    <label for="orderByField" class="block text-xs font-medium text-gray-500 mb-1.5">Order by</label>
+                                    <select id="orderByField" onchange="updateRawQueryPreview();"
+                                            class="w-full p-2.5 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all">
+                                        <!-- Options populated by JS: updateFilterInputs() -->
+                                    </select>
+                                </div>
+
+                                <!-- Order Direction Selector -->
+                                <div>
+                                    <label for="orderDirection" class="block text-xs font-medium text-gray-500 mb-1.5">Direction</label>
+                                    <select id="orderDirection" onchange="updateRawQueryPreview();"
+                                            class="w-full p-2.5 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all">
+                                        <option value="desc" selected>Descending</option>
+                                        <option value="asc">Ascending</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Filters -->
+                    <section id="advancedFiltersContainer" class="detail-section p-4 sm:p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-white">Filters <span id="activeFilterCount" class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-500/15 text-blue-400 hidden"></span></h2>
+                            <button id="clearFiltersButton" onclick="clearFilters()" class="text-xs font-medium text-gray-400 hover:text-white transition-colors hidden">Clear all</button>
+                        </div>
+                        <div id="filterInputs">
+                            <!-- Filter inputs will be injected here via JavaScript -->
+                        </div>
+                    </section>
+
+                    <!-- GraphQL Query (auto-generated, editable) -->
+                    <section id="rawQueryContainer" class="detail-section p-4 sm:p-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <label for="rawQueryInput" class="text-lg font-semibold text-white">GraphQL</label>
+                            <button id="resetQueryButton" onclick="resetManualQuery()" class="text-xs font-medium text-gray-400 hover:text-white transition-colors hidden">Reset to form</button>
+                        </div>
+                        <textarea id="rawQueryInput" rows="8" oninput="checkRawOverride()" spellcheck="false"
+                                  class="w-full p-3 bg-[#121212] border border-[#333333] rounded-lg text-gray-200 font-mono text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                                  placeholder="Paste your GraphQL query here or edit the preview."></textarea>
+                        <p id="manualOverrideHint" class="text-xs text-amber-500 mt-2 hidden">Manual query active: form filters are ignored.</p>
+
+                        <!-- Execute Button and Pagination Controls -->
+                        <div class="pt-4 flex flex-col sm:flex-row gap-3 justify-between items-center">
+                            <div class="flex gap-2 w-full sm:w-auto">
+                                <button id="prevPageButton" onclick="changePage(-1)" class="flex-grow sm:flex-grow-0 bg-[#2C2C2C] hover:bg-[#3A3A3A] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors" disabled>
+                                    &larr; Previous
+                                </button>
+                                <button id="nextPageButton" onclick="changePage(1)" class="flex-grow sm:flex-grow-0 bg-[#2C2C2C] hover:bg-[#3A3A3A] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors" disabled>
+                                    Next &rarr;
+                                </button>
+                            </div>
+                            <button id="executeButton" onclick="executeQuery()" class="w-full sm:w-auto bg-blue-800 hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
+                                Execute Query
+                            </button>
+                        </div>
+                    </section>
                 </div>
-                
-            </div>
-            <!-- END RIGHT PANEL -->
-            
-        </div>
-        <!-- END HORIZONTAL LAYOUT -->
 
+                <!-- RIGHT: Results -->
+                <div class="xl:col-span-7">
+                    <section class="detail-section p-4 sm:p-6 xl:sticky xl:top-20">
+                        <div class="flex items-center justify-between mb-4 gap-3">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <h2 class="text-lg font-semibold text-white">Result</h2>
+                                <span id="resultMeta" class="text-xs text-gray-500 truncate"></span>
+                            </div>
+                            <button id="copyButton" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2C2C2C] hover:bg-[#3A3A3A] text-sm text-gray-300 hover:text-white font-medium transition-colors" onclick="copyResults()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Copy JSON
+                            </button>
+                        </div>
+
+                        <!-- Loading/Error/Result Display -->
+                        <div id="outputArea" class="bg-[#121212] border border-[#333333] rounded-lg p-4 text-sm text-gray-300 overflow-auto min-h-[300px] max-h-[70vh] xl:max-h-[calc(100vh-11rem)]">
+                            <p class="text-gray-500">Waiting for query execution...</p>
+                        </div>
+
+                        <p id="errorAlert" class="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400 font-mono whitespace-pre-wrap break-all hidden"></p>
+                    </section>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script type="module">
-        // Imports basic Firebase functions
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-        // Global Canvas Environment Variables (mandatory)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'streamr-explorer-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let db, auth;
-        let isAuthReady = false;
         let isManualOverride = false; 
         
         // =====================================================
@@ -1159,27 +1126,110 @@
         // Store current result set size to determine if 'Next Page' should be enabled
         let lastResultCount = 0;
         
+        // Category display order and icons (sidebar navigation)
+        const CATEGORY_ORDER = ['Staking', 'Events', 'Governance', 'Data', 'Network', 'Metrics', 'Marketplace'];
+        const CATEGORY_ICONS = {
+            Staking: '<path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>',
+            Events: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+            Governance: '<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>',
+            Data: '<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/>',
+            Network: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+            Metrics: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+            Marketplace: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+        };
+
+        // --- Toast Notifications (same pattern as Streamr deCentral) ---
+        let toastCounter = 0;
+        const TOAST_ICONS = {
+            success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>',
+            error: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>',
+            info: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>',
+        };
+
+        function showToast({ type = 'info', title, message = '', duration = 4000 }) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.id = `toast-${++toastCounter}`;
+            toast.className = `toast toast-${type} relative overflow-hidden`;
+            toast.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <span class="toast-icon"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">${TOAST_ICONS[type] || TOAST_ICONS.info}</svg></span>
+                    <div class="flex-1 min-w-0">
+                        <p class="toast-title font-semibold text-white text-sm"></p>
+                        <p class="toast-message text-sm text-gray-400 mt-0.5 break-words ${message ? '' : 'hidden'}"></p>
+                    </div>
+                    <button class="toast-close flex-shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="toast-progress" style="width: 100%; transition: width ${duration}ms linear;"></div>
+            `;
+            // Text content is set separately: messages may contain data from the subgraph
+            toast.querySelector('.toast-title').textContent = title;
+            toast.querySelector('.toast-message').textContent = message;
+            container.appendChild(toast);
+
+            const progress = toast.querySelector('.toast-progress');
+            progress.offsetHeight; // Trigger reflow so the width transition runs
+            progress.style.width = '0%';
+
+            const removeToast = () => {
+                toast.classList.add('toast-removing');
+                setTimeout(() => toast.remove(), 300);
+            };
+            toast.querySelector('.toast-close').addEventListener('click', removeToast);
+            setTimeout(removeToast, duration);
+        }
+
         /**
-         * Initializes Firebase and performs initial authentication.
+         * Copies the last query result (JSON) to the clipboard.
          */
-        async function initializeFirebase() {
+        window.copyResults = async function() {
+            const json = document.getElementById('outputArea').dataset.rawJson;
+            if (!json) return;
             try {
-                if (firebaseConfig) {
-                    const app = initializeApp(firebaseConfig);
-                    auth = getAuth(app);
-                    
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                        console.log("Firebase: Authenticated with custom token.");
-                    } else {
-                        await signInAnonymously(auth);
-                        console.log("Firebase: Anonymous authentication performed.");
-                    }
-                }
-                isAuthReady = true;
-            } catch (error) {
-                console.error("Firebase: Error during initialization/authentication:", error);
+                await navigator.clipboard.writeText(json);
+                showToast({ type: 'success', title: 'Copied', message: 'Result JSON copied to clipboard.', duration: 2500 });
+            } catch (e) {
+                showToast({ type: 'error', title: 'Copy failed', message: e.message });
             }
+        }
+
+        /**
+         * Clears every filter of the current entity.
+         */
+        window.clearFilters = function() {
+            document.querySelectorAll('#filterInputs input, #filterInputs select').forEach(el => { el.value = ''; });
+            updateRawQueryPreview();
+        }
+
+        /**
+         * Discards manual edits and regenerates the query from the form.
+         */
+        window.resetManualQuery = function() {
+            isManualOverride = false;
+            updateRawQueryPreview();
+        }
+
+        /**
+         * Selects an entity from the sidebar navigation.
+         */
+        window.selectEntity = function(entityName) {
+            document.getElementById('entityName').value = entityName;
+            updateFilterInputs();
+            executeQuery();
+        }
+
+        /**
+         * Updates the active-filter badge and the "Clear all" button.
+         */
+        function updateActiveFilterCount() {
+            const count = [...document.querySelectorAll('#filterInputs input, #filterInputs select')]
+                .filter(el => el.value.trim() !== '').length;
+            const badge = document.getElementById('activeFilterCount');
+            badge.textContent = count;
+            badge.classList.toggle('hidden', count === 0);
+            document.getElementById('clearFiltersButton').classList.toggle('hidden', count === 0);
         }
 
         /**
@@ -1293,6 +1343,7 @@
                 isManualOverride = false;
                 manualOverrideHint.classList.add('hidden');
             }
+            document.getElementById('resetQueryButton').classList.toggle('hidden', !isManualOverride);
             checkInputs();
         }
 
@@ -1432,8 +1483,15 @@
             // Switching entity discards any manual edit of the previous entity's query
             isManualOverride = false;
 
-            // Update header with entity name and description
-            document.getElementById('currentEntityFilter').innerHTML = `${config.label} <span class="text-xs text-gray-500 font-normal">(${config.category})</span>`;
+            // Update page header and sidebar with entity name, category and description
+            document.getElementById('desktop-page-title').textContent = config.label;
+            document.getElementById('desktop-page-category').textContent = config.category;
+            document.getElementById('desktop-page-description').textContent = config.description;
+            document.getElementById('mobile-page-description').textContent = config.description;
+            document.title = `${config.label} · Streamr Subgraph Explorer`;
+            document.querySelectorAll('#entity-nav .nav-link').forEach(link => {
+                link.classList.toggle('active', link.dataset.entity === entityName);
+            });
             
             filterInputsContainer.innerHTML = ''; // Clear previous filter inputs
 
@@ -1458,13 +1516,8 @@
             // --- 3. Handle Meta Query Type (like '_meta') ---
             if (config.queryType === 'meta') {
                 filterInputsContainer.innerHTML = `
-                    <div class="col-span-full text-center py-4">
-                        <div class="text-gray-400 text-sm">
-                            <span class="text-2xl">ℹ️</span>
-                            <p class="mt-2">This query returns subgraph metadata.</p>
-                            <p class="text-xs text-gray-500 mt-1">No filters needed - returns current indexing status and block information.</p>
-                        </div>
-                    </div>
+                    <p class="text-sm text-gray-400">This query returns subgraph metadata.</p>
+                    <p class="text-xs text-gray-500 mt-1">No filters needed: returns the current indexing status and block information.</p>
                 `;
                 updateRawQueryPreview();
                 return;
@@ -1472,12 +1525,12 @@
             
             // --- 4. Generate Filter HTML Dynamically ---
             if (!config.filters || config.filters.length === 0) {
-                filterInputsContainer.innerHTML = '<p class="text-gray-500 text-sm">No filters available for this entity.</p>';
+                filterInputsContainer.innerHTML = '<p class="text-sm text-gray-500">No filters available for this entity.</p>';
                 updateRawQueryPreview();
                 return;
             }
 
-            let html = '<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">';
+            let html = '<div class="grid grid-cols-2 gap-3">';
             
             config.filters.forEach(filter => {
                 html += generateFilterInput(filter);
@@ -1487,12 +1540,12 @@
             
             // Add info message for single query types
             if (config.queryType === 'single' && config.singleIdRequired) {
+                const hint = config.listFallback
+                    ? 'Enter an ID to fetch a specific record, or leave it empty to get the first one.'
+                    : 'This entity requires an ID for lookup. Enter the ID below to fetch the specific record.';
                 html = `
-                    <div class="mb-4 p-3 bg-blue-900/50 border border-blue-700 rounded-lg">
-                        <p class="text-sm text-blue-300">
-                            <strong>ℹ️ Single Entity Query:</strong> This entity requires an ID for lookup. 
-                            Enter the ID below to fetch the specific record.
-                        </p>
+                    <div class="mb-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                        <p class="text-sm text-blue-300"><strong>Single entity query.</strong> ${hint}</p>
                     </div>
                 ` + html;
             }
@@ -1515,7 +1568,7 @@
          */
         function generateFilterInput(filter) {
             const onInputChange = 'updateRawQueryPreview()';
-            const baseInputClass = 'w-full p-2 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#555555] transition-colors';
+            const baseInputClass = 'w-full p-2.5 bg-[#121212] border border-[#333333] rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all';
             
             let inputHtml = '';
             
@@ -1603,7 +1656,7 @@
             
             return `
                 <div class="w-full">
-                    <label for="${filter.id}" class="block text-xs font-medium text-gray-400 mb-1">
+                    <label for="${filter.id}" class="block text-xs font-medium text-gray-500 mb-1.5">
                         ${filter.label}${filter.required ? ' <span class="text-red-400">*</span>' : ''}
                     </label>
                     ${inputHtml}
@@ -1830,6 +1883,7 @@ query Get${config.label.replace(/[\s()]/g, '')}s {
          */
         window.updateRawQueryPreview = function() {
              const rawQueryInput = document.getElementById('rawQueryInput');
+             updateActiveFilterCount();
              
              if (!isManualOverride) {
                  // Apply trim() to remove leading newline characters
@@ -1847,6 +1901,7 @@ query Get${config.label.replace(/[\s()]/g, '')}s {
                  }
              }
 
+             document.getElementById('resetQueryButton').classList.toggle('hidden', !isManualOverride);
              checkInputs(); 
         }
 
@@ -1867,16 +1922,8 @@ query Get${config.label.replace(/[\s()]/g, '')}s {
             const select = document.getElementById('entityName');
             select.innerHTML = '';
             
-            // Category icons for better visual organization
-            const categoryIcons = {
-                'Staking': '💰',
-                'Events': '📊',
-                'Governance': '🗳️',
-                'Data': '📡',
-                'Network': '🌐',
-                'Metrics': '📈',
-                'Marketplace': '🏪'
-            };
+            const nav = document.getElementById('entity-nav');
+            nav.innerHTML = '';
             
             // Group entities by category
             const categories = {};
@@ -1887,33 +1934,39 @@ query Get${config.label.replace(/[\s()]/g, '')}s {
                 categories[config.category].push({ key, ...config });
             });
             
-            // Create optgroups for each category
-            const categoryOrder = ['Staking', 'Events', 'Governance', 'Data', 'Network', 'Metrics', 'Marketplace'];
-            
-            // Count total entities
-            const totalEntities = Object.keys(ENTITY_CONFIG).length;
-            console.log(`📋 Streamr Explorer: ${totalEntities} entities available across ${categoryOrder.length} categories`);
-            
-            categoryOrder.forEach(category => {
-                if (categories[category]) {
-                    const optgroup = document.createElement('optgroup');
-                    const icon = categoryIcons[category] || '📁';
-                    optgroup.label = `${icon} ${category} (${categories[category].length})`;
-                    
-                    categories[category].forEach(entity => {
-                        const option = document.createElement('option');
-                        option.value = entity.key;
-                        // Add query type indicator
-                        let suffix = '';
-                        if (entity.queryType === 'single') suffix = ' ⚡';
-                        else if (entity.queryType === 'meta') suffix = ' ℹ️';
-                        option.textContent = `${entity.label}${suffix}`;
-                        option.title = entity.description;
-                        optgroup.appendChild(option);
-                    });
-                    
-                    select.appendChild(optgroup);
-                }
+            // Create an optgroup (mobile select) and a sidebar section for each category
+            CATEGORY_ORDER.forEach((category, index) => {
+                if (!categories[category]) return;
+
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = `${category} (${categories[category].length})`;
+
+                let navHtml = `
+                    ${index > 0 ? '<div class="my-3 mx-3 border-t border-white/[0.04]"></div>' : ''}
+                    <div class="px-3 pt-2 pb-1 flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${CATEGORY_ICONS[category] || ''}</svg>
+                        <span class="text-[10px] font-semibold text-gray-600 uppercase tracking-widest">${category}</span>
+                    </div>
+                `;
+
+                categories[category].forEach(entity => {
+                    const option = document.createElement('option');
+                    option.value = entity.key;
+                    option.textContent = entity.label;
+                    option.title = entity.description;
+                    optgroup.appendChild(option);
+
+                    navHtml += `
+                        <a href="#" data-entity="${entity.key}" title="${entity.description}"
+                           onclick="event.preventDefault(); selectEntity('${entity.key}');"
+                           class="nav-link flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-400 hover:text-white hover:bg-white/[0.03] transition-all duration-200">
+                            ${entity.label}
+                        </a>
+                    `;
+                });
+
+                select.appendChild(optgroup);
+                nav.insertAdjacentHTML('beforeend', `<div class="px-2 space-y-0.5">${navHtml}</div>`);
             });
             
             // Set default selection
@@ -1961,9 +2014,14 @@ query Get${config.label.replace(/[\s()]/g, '')}s {
             }
 
             // 2. VALIDATION AND UI RESET
-            outputArea.innerHTML = '<p class="text-yellow-400">Loading data...</p>';
+            outputArea.innerHTML = `
+                <div class="flex items-center justify-center py-16">
+                    <div class="loader rounded-full border-4 border-[#555555] border-t-transparent h-8 w-8"></div>
+                </div>`;
+            document.getElementById('resultMeta').textContent = '';
             errorAlert.classList.add('hidden');
             copyButton.classList.add('hidden');
+            copyButton.classList.remove('flex');
             executeButton.disabled = true;
 
             // Disable pagination buttons temporarily during query execution
@@ -2115,9 +2173,19 @@ query Get${config.label.replace(/[\s()]/g, '')}s {
                 
                 const jsonString = JSON.stringify(finalFormattedOutput, null, 2);
                 
-                outputArea.innerHTML = `<pre class="text-xs sm:text-sm font-mono">${jsonString}</pre>`;
+                // Render as text: subgraph data (e.g. stream metadata) is user-controlled
+                const pre = document.createElement('pre');
+                pre.className = 'json-output text-xs sm:text-sm font-mono text-gray-300';
+                pre.textContent = jsonString;
+                outputArea.replaceChildren(pre);
                 outputArea.dataset.rawJson = jsonString; 
                 copyButton.classList.remove('hidden');
+                copyButton.classList.add('flex');
+
+                const resultCount = Array.isArray(finalFormattedOutput) ? finalFormattedOutput.length : null;
+                document.getElementById('resultMeta').textContent = resultCount === null
+                    ? ''
+                    : `${resultCount} result${resultCount === 1 ? '' : 's'}`;
 
             } catch (error) {
                 console.error("GraphQL Query Error:", error);
@@ -2125,19 +2193,16 @@ query Get${config.label.replace(/[\s()]/g, '')}s {
                 outputArea.innerHTML = `<p class="text-red-400">Query failed.</p>`;
                 errorAlert.classList.remove('hidden');
                 copyButton.classList.add('hidden');
+                copyButton.classList.remove('flex');
+                showToast({ type: 'error', title: 'Query failed', message: 'See the error details below the result.' });
             } finally {
                 executeButton.disabled = false;
                 checkPaginationButtons(); // Re-enable based on the last result count
             }
         }
 
-        // Initialize Firebase and add input listeners.
         window.onload = function () {
-            initializeFirebase().then(() => {
-                document.getElementById('executeButton').disabled = false;
-            });
-            
-            // Populate entity dropdown with categories
+            // Populate entity select and sidebar navigation with categories
             populateEntityDropdown();
             
             // Initialize filters with the default entity
